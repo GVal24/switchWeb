@@ -61,6 +61,8 @@ router.post('/reportes', requerirSesion, requiereCuentaHabilitada, reporteContro
 
 // Rutas de Perfil de Usuario
 router.get('/usuarios/perfil', requerirSesion, usuarioController.obtenerMiPerfil);
+router.get('/usuarios/:id/publico', usuarioController.obtenerPerfilPublico);
+router.get('/usuarios/:id/publico', usuarioController.obtenerPerfilPublico);
 
 // 🟢 Rutas de Administración (Dashboard y Moderación) — solo rol ADMIN
 router.get('/admin/estadisticas', requerirSesion, requerirAdmin, adminController.obtenerEstadisticasAdmin);

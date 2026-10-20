@@ -39,6 +39,7 @@ const TITULOS = {
   '/voluntariado': ['Voluntariado', 'Instituciones y necesidades'],
   '/catalogo': ['Catálogo P2P', 'Trueques de la comunidad'],
   '/perfil': ['Mi perfil', 'Impacto y reputación'],
+  '/usuario': ['Perfil', 'Perfil público'],
   '/accesibilidad': ['Accesibilidad', 'Tu experiencia, a tu manera'],
   '/contacto': ['Contacto', 'Escribinos'],
   '/admin': ['Administración', 'Panel de control'],
@@ -376,6 +377,10 @@ function registrarRutas() {
   definirRuta('/detalle/:id', () => import('./screens/detalle.js'), {
     seccion: '/catalogo',
     titulo: 'Publicación',
+  });
+  definirRuta('/usuario/:id', () => import('./screens/perfil-publico.js'), {
+    titulo: 'Perfil',
+    subtitulo: 'Perfil público',
   });
   definirRuta('/publicar', () => import('./screens/crear-publicacion.js'), {
     requiereSesion: true,

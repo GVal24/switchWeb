@@ -266,10 +266,10 @@ export async function render(contenedor) {
     }</span>
           </div>
           <div class="pub-pie">
-            <span class="pub-dueno">
+            <button type="button" class="pub-dueno" data-ver-usuario="${esc(idOferente(pub))}" style="border:0;background:none;padding:0;text-align:left;cursor:pointer;">
               ${avatar(nombreOferente(pub))}
               <span>${esc(nombreOferente(pub))}</span>
-            </span>
+            </button>
             ${
               Number.isFinite(calif) && resenas > 0
                 ? `<span class="chip" title="${esc(String(resenas))} reseñas">${icon('star')} ${calif.toFixed(1)}</span>`

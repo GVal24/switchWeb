@@ -115,7 +115,9 @@ export async function render(contenedor, ctx) {
         <div class="dueno-fila">
           ${avatar(dueno, 'avatar-lg')}
           <div class="crece">
-            <p class="dueno-nombre">${esc(dueno)}${esMia ? ' (vos)' : ''}</p>
+            <button type="button" class="dueno-nombre" data-ver-usuario="${esc(idOferente(pub))}" style="border:0;background:none;padding:0;text-align:left;cursor:pointer;color:inherit;font-weight:inherit;">
+              ${esc(dueno)}${esMia ? ' (vos)' : ''}
+            </button>
             <div class="dueno-meta">
               ${icon('swap')} ${Number.isFinite(trueques) ? trueques : 0} trueques
               ${icon('heart')} ${Number.isFinite(voluntariados) ? voluntariados : 0} voluntariados
@@ -141,6 +143,12 @@ export async function render(contenedor, ctx) {
   const aviso = contenedor.querySelector('#detalle-aviso');
   const acciones = contenedor.querySelector('#detalle-acciones');
   contenedor.querySelector('[data-volver-cat]').addEventListener('click', () => navegar('/catalogo'));
+
+  contenedor.querySelector('[data-ver-usuario]')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const uid = idOferente(pub);
+    if (uid) navegar(`/usuario/${encodeURIComponent(uid)}`);
+  });
 
   if (esMia) {
     aviso.innerHTML = `<div class="banner banner-info">${icon('info')}<div><strong>Esta publicación es tuya</strong><p>No podés proponerte un trueque a vos mismo. Podés ver el estado de tus intercambios.</p></div></div>`;

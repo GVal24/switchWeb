@@ -273,6 +273,11 @@ export const API = {
     return datos(res);
   },
 
+  async perfilPublico(id) {
+    const res = await pedir('/usuarios/' + encodeURIComponent(id) + '/publico');
+    return datos(res);
+  },
+
   async mensajes(receptorId) {
     const res = await pedir('/mensajes?receptorId=' + encodeURIComponent(receptorId));
     return listaDe(datos(res), ['mensajes']);

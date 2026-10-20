@@ -300,6 +300,53 @@ class UsuarioModel {
   }
 
   /**
+   * Obtener perfil público de un usuario (solo datos no sensibles).
+   */
+  static async obtenerPerfilPublico(usuarioId) {
+    const queryUsuario = `
+      SELECT 
+        id, 
+        nombre, 
+        apellido, 
+        TO_CHAR(creado_en AT TIME ZONE 'America/Argentina/Buenos_Aires', 'DD/MM/YYYY') AS miembro_desde
+      FROM usuarios 
+      WHERE id = $1 AND activo = TRUE
+      LIMIT 1;
+    `;
+
+    const queryStats = `
+      SELECT
+        (SELECT COUNT(*) FROM intercambios
+          WHERE estado = 'COMPLETADO' AND (dueno_id = $1 OR ofertante_id = $1)) AS trueques_completados,
+        (SELECT COUNT(*) FROM nexos_sociales WHERE usuario_id = $1) AS voluntariados,
+        (SELECT COALESCE(ROUND(AVG(puntaje)::numeric, 1), 0) FROM resenas WHERE destino_id = $1) AS calificacion_promedio,
+        (SELECT COUNT(*) FROM resenas WHERE destino_id = $1) AS cantidad_resenas
+    `;
+
+    const [resUsuario, resStats] = await Promise.all([
+      db.query(queryUsuario, [usuarioId]),
+      db.query(queryStats, [usuarioId])
+    ]);
+
+    if (resUsuario.rowCount === 0) return null;
+
+    const stats = resStats.rows[0];
+    const estadisticas = {
+      truequesCompletados: Number(stats.trueques_completados),
+      voluntariados: Number(stats.voluntariados),
+      calificacionPromedio: parseFloat(stats.calificacion_promedio),
+      cantidadResenas: Number(stats.cantidad_resenas),
+      esPionero: Number(resUsuario.rows[0].id) <= 10
+    };
+
+    return {
+      ...resUsuario.rows[0],
+      estadisticas,
+      impacto: calcularImpacto(estadisticas)
+    };
+  }
+
+  /**
    * Devuelve el nombre de pila de un usuario (para propuestas de trueque).
    */
   static async obtenerNombrePorId(usuarioId) {

@@ -20,10 +20,7 @@ import {
 import { navegar } from '../router.js';
 
 export async function render(contenedor, ctx) {
-  if (!Store.sesionActiva) {
-    navegar('/login?volver=/perfil', { reemplazar: true });
-    return;
-  }
+
 
   contenedor.innerHTML = `<section class="pantalla">${spinner('Cargando tu perfil…')}</section>`;
 
