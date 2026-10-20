@@ -266,7 +266,7 @@ export async function render(contenedor) {
     }</span>
           </div>
           <div class="pub-pie">
-            <button type="button" class="pub-dueno" data-ver-usuario="${esc(idOferente(pub))}" style="border:0;background:none;padding:0;text-align:left;cursor:pointer;">
+            <button type="button" class="pub-dueno" data-ver-usuario="${esc((pub.usuario_id || pub.oferente_id || ''))}" style="border:0;background:none;padding:0;text-align:left;cursor:pointer;">
               ${avatar(nombreOferente(pub))}
               <span>${esc(nombreOferente(pub))}</span>
             </button>
