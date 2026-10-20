@@ -134,7 +134,7 @@ export const Store = {
         escala: Math.min(1.5, Math.max(1, num(localStorage.getItem('acc_escala_texto'), 1))),
         altoContraste: bool(localStorage.getItem('acc_alto_contraste'), false),
         paletaSuave: bool(localStorage.getItem('acc_paleta_suave'), false),
-        paletaMenta: bool(localStorage.getItem('acc_paleta_menta'), false),
+        paletaMenta: bool(localStorage.getItem('acc_paleta_clara'), false),
         blancoNegro: bool(localStorage.getItem('acc_blanco_negro'), false),
         vistaAccesible: bool(localStorage.getItem('acc_vista_accesible'), false),
       };
@@ -146,6 +146,7 @@ export const Store = {
       this.acc.paletaMenta = false;
     }
     if (this.acc.paletaSuave && this.acc.paletaMenta) this.acc.paletaMenta = false;
+    try { localStorage.removeItem('acc_paleta_menta'); } catch (e) {}
     return this.acc;
   },
 
@@ -196,7 +197,8 @@ export const Store = {
       localStorage.setItem('acc_escala_texto', String(a.escala));
       localStorage.setItem('acc_alto_contraste', a.altoContraste ? '1' : '0');
       localStorage.setItem('acc_paleta_suave', a.paletaSuave ? '1' : '0');
-      localStorage.setItem('acc_paleta_menta', a.paletaMenta ? '1' : '0');
+      localStorage.setItem('acc_paleta_clara', a.paletaMenta ? '1' : '0');
+      try { localStorage.removeItem('acc_paleta_menta'); } catch (e) {}
       localStorage.setItem('acc_blanco_negro', a.blancoNegro ? '1' : '0');
       localStorage.setItem('acc_vista_accesible', a.vistaAccesible ? '1' : '0');
     } catch (e) {}
@@ -212,13 +214,14 @@ export const Store = {
           escala: 'acc_escala_texto',
           altoContraste: 'acc_alto_contraste',
           paletaSuave: 'acc_paleta_suave',
-          paletaMenta: 'acc_paleta_menta',
+          paletaMenta: 'acc_paleta_clara',
           blancoNegro: 'acc_blanco_negro',
           vistaAccesible: 'acc_vista_accesible',
         }[k];
         localStorage.removeItem(clave);
       });
     } catch (e) {}
+    try { localStorage.removeItem('acc_paleta_menta'); } catch (e) {}
     this.aplicarAccesibilidad();
   },
 };
