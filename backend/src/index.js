@@ -1,4 +1,4 @@
-const path = require('path');
+﻿const path = require('path');
 require('dotenv').config({ path: path.resolve(__dirname, '../../.env'), override: true });
 
 const express = require('express');
@@ -10,11 +10,11 @@ const almacenImagenes = require('./services/almacenImagenes');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Configuración de Middlewares
+// ConfiguraciÃ³n de Middlewares
 //
 // CORS: si la variable ORIGENES_PERMITIDOS tiene una lista separada por
-// comas, sólo se aceptan esos orígenes (por ejemplo, la web publicada en
-// Vercel). Si no está definida, se acepta cualquier origen (útil para
+// comas, sÃ³lo se aceptan esos orÃ­genes (por ejemplo, la web publicada en
+// Vercel). Si no estÃ¡ definida, se acepta cualquier origen (Ãºtil para
 // desarrollo local y pruebas). Las peticiones sin cabecera Origin (apps
 // nativas, curl, pruebas) siempre pasan.
 const origenesPermitidos = String(process.env.ORIGENES_PERMITIDOS || '')
@@ -36,13 +36,13 @@ app.use(
 );
 app.use(express.json());
 
-// Imágenes subidas por los usuarios (fotos de publicaciones)
-// Imágenes del catálogo.
+// ImÃ¡genes subidas por los usuarios (fotos de publicaciones)
+// ImÃ¡genes del catÃ¡logo.
 //
-// Se sirven SOLO las que ya fueron aprobadas por moderación. Las que están
-// en uploads/_cuarena/ quedan bloqueadas acá: si se sirvieran, cualquiera
-// con el nombre del archivo podría ver una imagen que la plataforma todavía
-// no aprobó (incluidas las marcadas como posible imagen de un menor).
+// Se sirven SOLO las que ya fueron aprobadas por moderaciÃ³n. Las que estÃ¡n
+// en uploads/_cuarena/ quedan bloqueadas acÃ¡: si se sirvieran, cualquiera
+// con el nombre del archivo podrÃ­a ver una imagen que la plataforma todavÃ­a
+// no aprobÃ³ (incluidas las marcadas como posible imagen de un menor).
 app.use('/uploads', (req, res, next) => {
   const relativo = decodeURIComponent(req.path || '');
   const partes = relativo.split('/').filter(Boolean);
@@ -51,17 +51,17 @@ app.use('/uploads', (req, res, next) => {
     return res.status(404).json({
       exito: false,
       codigoEstado: 404,
-      mensaje: 'La imagen no está disponible.',
+      mensaje: 'La imagen no estÃ¡ disponible.',
     });
   }
 
   // Cualquier intento de meterse en una subcarpeta (subidas, ..) se rechaza:
-  // el catálogo sólo tiene archivos sueltos en la raíz de uploads/.
+  // el catÃ¡logo sÃ³lo tiene archivos sueltos en la raÃ­z de uploads/.
   if (partes.length > 1) {
     return res.status(404).json({
       exito: false,
       codigoEstado: 404,
-      mensaje: 'La imagen no está disponible.',
+      mensaje: 'La imagen no estÃ¡ disponible.',
     });
   }
 
@@ -69,8 +69,8 @@ app.use('/uploads', (req, res, next) => {
 });
 app.use('/uploads', express.static(almacenImagenes.DIR_UPLOADS));
 
-// Ruta Raíz - Estado de la API.
-// Si la petición viene de un navegador, se lo lleva a la aplicación web.
+// Ruta RaÃ­z - Estado de la API.
+// Si la peticiÃ³n viene de un navegador, se lo lleva a la aplicaciÃ³n web.
 app.get('/', (req, res) => {
   const aceptaHtml = String(req.headers.accept || '').includes('text/html');
   if (aceptaHtml) return res.redirect('/app/');
@@ -86,7 +86,7 @@ app.get('/', (req, res) => {
 // Rutas de la API
 app.use('/api', routes);
 
-// Aplicación web (PWA). Se sirve bajo /app para no tapar la ruta de estado
+// AplicaciÃ³n web (PWA). Se sirve bajo /app para no tapar la ruta de estado
 // de la API ni las rutas /api y /uploads.
 app.use(
   '/app',
@@ -100,15 +100,17 @@ app.use(
   })
 );
 
-// Middleware Centralizado de Gestión de Errores (Siempre al final)
+// Middleware Centralizado de GestiÃ³n de Errores (Siempre al final)
 app.use(errorHandler);
 
 // Se exporta la app para que las pruebas puedan levantarla en un puerto
-// efímero. Sólo se inicia el servidor cuando el archivo se ejecuta directo.
+// efÃ­mero. SÃ³lo se inicia el servidor cuando el archivo se ejecuta directo.
 if (require.main === module) {
   app.listen(PORT, () => {
-    console.log(`🚀 Servidor Switch corriendo exitosamente en http://localhost:${PORT}`);
+    console.log(`ðŸš€ Servidor Switch corriendo exitosamente en http://localhost:${PORT}`);
   });
 }
 
 module.exports = app;
+
+// deploy trigger
