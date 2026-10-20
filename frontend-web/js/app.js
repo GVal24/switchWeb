@@ -466,6 +466,10 @@ async function registrarServiceWorker() {
     let recargando = false;
     navigator.serviceWorker.addEventListener('controllerchange', () => {
       if (recargando) return;
+      try {
+        if (sessionStorage.getItem('switch_sw_reload')) return;
+        sessionStorage.setItem('switch_sw_reload', '1');
+      } catch (e) {}
       recargando = true;
       window.location.reload();
     });
