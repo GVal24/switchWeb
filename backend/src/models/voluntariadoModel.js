@@ -53,11 +53,14 @@ class VoluntariadoModel {
 
     if (cupoNecesidadId) {
       const resCupo = await db.query(
-        'SELECT titulo, descripcion, prioridad FROM cupos_necesidad WHERE id = $1',
+        'SELECT titulo, descripcion, prioridad, institucion_id FROM cupos_necesidad WHERE id = $1',
         [cupoNecesidadId]
       );
       const cupo = resCupo.rows[0];
       if (cupo) {
+        if (cupo.institucion_id && Number(cupo.institucion_id) !== Number(institucionId)) {
+          throw new (require('../utils/customErrors').ValidationError)('El cupo seleccionado no corresponde a la instituci�n del c�digo QR escaneado.');
+        }
         prioridadAplicada = cupo.prioridad;
         diasBase = VIGENCIA_POR_PRIORIDAD[cupo.prioridad] || VIGENCIA_POR_PRIORIDAD.GENERAL;
         const esfuerzo = clasificarEsfuerzo(cupo.titulo, cupo.descripcion);
