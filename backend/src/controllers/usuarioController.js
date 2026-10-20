@@ -33,21 +33,7 @@ const obtenerPerfilPublico = asyncWrapper(async (req, res) => {
     mensaje: 'Perfil público obtenido correctamente.',
     datos: perfil
   });
-});
 
-const obtenerPerfilPublico = asyncWrapper(async (req, res) => {
-  const { id } = req.params;
-  const perfil = await UsuarioModel.obtenerPerfilPublico(id);
-
-  if (!perfil) {
-    throw new NotFoundError('No se encontró el perfil del usuario.');
-  }
-
-  res.status(200).json({
-    exito: true,
-    mensaje: 'Perfil público obtenido correctamente.',
-    datos: perfil
-  });
 });
 
 module.exports = {
