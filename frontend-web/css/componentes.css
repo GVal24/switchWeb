@@ -1025,8 +1025,10 @@ html[data-paleta="suave"] .campo-input {
 
   .bottomnav::before {
     content: "Switch";
-    display: block;
-    padding: 0.2rem 0.7rem 1.2rem;
+    display: flex;
+    align-items: center;
+    padding: 0.2rem 0.7rem 1.2rem 2.8rem;
+    background: url("../icons/icon-192.png") no-repeat 0.5rem center / 2rem 2rem;
     font-size: 1.35rem;
     font-weight: 900;
     letter-spacing: -0.03em;
