@@ -1,0 +1,37 @@
+# ============================================================
+# PROYECTO SWITCH WEB
+# ============================================================
+
+# ------------------------------------------------------------
+# Dependencias de Node: se reinstalan con `npm install`.
+# ------------------------------------------------------------
+node_modules/
+
+# ------------------------------------------------------------
+# Imágenes que sube la gente.
+# uploads/ tiene las imágenes ya aprobadas; uploads/_cuarena/
+# las que esperan revisión de una persona. Son archivos de los
+# usuarios, no código.
+# ------------------------------------------------------------
+backend/uploads/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ------------------------------------------------------------
+# .env — IGNORADO
+# ------------------------------------------------------------
+.env
+.env.local
+
+# Archivos que nunca deben perderse
+!schema.sql
+!seed.sql
+!backend/package-lock.json
+!.env.example

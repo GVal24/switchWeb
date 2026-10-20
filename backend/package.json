@@ -1,0 +1,31 @@
+{
+  "name": "switch-backend",
+  "version": "1.0.0",
+  "description": "Backend API RESTful para la plataforma Switch - Red RMC P2P",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js"
+  },
+  "keywords": [
+    "switch",
+    "p2p",
+    "red-rmc",
+    "inclusion-social"
+  ],
+  "author": "Guillermina V. Valdez",
+  "license": "ISC",
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.6.1",
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.3",
+    "multer": "^2.2.0",
+    "pg": "^8.23.0",
+    "qrcode": "^1.5.4"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0"
+  }
+}

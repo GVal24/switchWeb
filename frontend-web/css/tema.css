@@ -1,0 +1,369 @@
+/* =========================================================
+   Switch — Tokens, paletas de accesibilidad y base tipográfica
+   ========================================================= */
+
+:root {
+  --escala: 1;
+
+  --fuente: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Roboto, Arial, sans-serif;
+
+  --fondo: #0b132b;
+  --fondo-2: #0e1730;
+  --tarjeta: #1c2541;
+  --tarjeta-2: #24325c;
+  --texto: #f8f9fa;
+  --texto-suave: #a4b0c4;
+  --logo-s: #f8f9fa;
+
+  --verde: #10b981;
+  --verde-oscuro: #059669;
+  --azul: #3b82f6;
+  --naranja: #f59e0b;
+  --rojo: #ef4444;
+  --amarillo: #fbbf24;
+
+  --borde: rgba(255, 255, 255, 0.08);
+  --borde-fuerte: rgba(255, 255, 255, 0.18);
+  --brillo: rgba(255, 255, 255, 0.05);
+  --foco: #60a5fa;
+
+  --sombra: 0 14px 34px rgba(0, 0, 0, 0.32);
+  --sombra-suave: 0 6px 18px rgba(0, 0, 0, 0.22);
+
+  --degradado-primario: linear-gradient(135deg, #10b981 0%, #0ea5a0 100%);
+  --degradado-azul: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
+  --degradado-naranja: linear-gradient(135deg, #f59e0b 0%, #ea7317 100%);
+  --degradado-rojo: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  --degradado-tarjeta: linear-gradient(160deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0) 55%);
+
+  --radio-xs: 0.5rem;
+  --radio-sm: 0.75rem;
+  --radio: 0.9rem;
+  --radio-lg: 1.15rem;
+  --radio-xl: 1.5rem;
+
+  --alto-barra: 3.6rem;
+  --alto-nav: 4.35rem;
+  --alto-imagen: 150px;
+
+  color-scheme: dark;
+}
+
+/* ---------- Escala de texto (1.0 – 1.5) ---------- */
+html {
+  font-size: calc(100% * var(--escala));
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* ---------- Paleta 2: Vista accesible (baja visión, letra grande) ---------- */
+html[data-paleta="accesible"] {
+  font-size: calc(112.5% * var(--escala));
+  --fondo: #000000;
+  --fondo-2: #000000;
+  --tarjeta: #111827;
+  --tarjeta-2: #1c2a3f;
+  --texto: #ffffff;
+  --texto-suave: #e5e7eb;
+  --verde: #22c55e;
+  --azul: #93c5fd;
+  --naranja: #fbbf24;
+  --borde: rgba(255, 255, 255, 0.3);
+  --borde-fuerte: rgba(255, 255, 255, 0.55);
+  --sombra: none;
+  --sombra-suave: none;
+  --degradado-primario: linear-gradient(135deg, #22c55e, #16a34a);
+  color-scheme: dark;
+}
+
+/* ---------- Paleta 3: Alto contraste ---------- */
+html[data-paleta="contraste"] {
+  font-size: calc(110% * var(--escala));
+  --fondo: #000000;
+  --fondo-2: #000000;
+  --tarjeta: #000000;
+  --tarjeta-2: #111111;
+  --texto: #ffffff;
+  --texto-suave: #ffffff;
+  --logo-s: #ffffff;
+  --verde: #ffff00;
+  --verde-oscuro: #ffff00;
+  --azul: #ffff00;
+  --naranja: #ffff00;
+  --rojo: #ff6b6b;
+  --borde: #ffffff;
+  --borde-fuerte: #ffffff;
+  --foco: #ffff00;
+  --sombra: none;
+  --sombra-suave: none;
+  --degradado-primario: #ffff00;
+  --degradado-azul: #ffff00;
+  --degradado-naranja: #ffff00;
+  --degradado-rojo: #ff6b6b;
+  --degradado-tarjeta: none;
+  color-scheme: dark;
+}
+
+html[data-paleta="contraste"] .btn,
+html[data-paleta="contraste"] .icon-btn,
+html[data-paleta="contraste"] .campo-input,
+html[data-paleta="contraste"] .chip,
+html[data-paleta="contraste"] .card,
+html[data-paleta="contraste"] .seguro,
+html[data-paleta="contraste"] .nav-item {
+  border-width: 2px !important;
+}
+html[data-paleta="contraste"] .btn-primario,
+html[data-paleta="contraste"] .btn-secundario,
+html[data-paleta="contraste"] .btn-azul,
+html[data-paleta="contraste"] .btn-peligro {
+  color: #000;
+}
+html[data-paleta="contraste"] .btn-primario:hover,
+html[data-paleta="contraste"] .btn-azul:hover {
+  background: #ffea00;
+}
+html[data-paleta="contraste"] .isotipo {
+  color: #ffff00;
+}
+
+/* ---------- Paleta 4: Suave y calma (baja estimulación) ---------- */
+html[data-paleta="suave"] {
+  --fondo: #f6f3ee;
+  --fondo-2: #efeae2;
+  --tarjeta: #ffffff;
+  --tarjeta-2: #fbf9f5;
+  --texto: #4a4a45;
+  --texto-suave: #85827a;
+  --logo-s: #4a4a45;
+  --verde: #8fb79b;
+  --verde-oscuro: #7ba889;
+  --azul: #9db4c0;
+  --naranja: #c9a66b;
+  --rojo: #c08a8a;
+  --amarillo: #c9a66b;
+  --borde: rgba(74, 74, 69, 0.14);
+  --borde-fuerte: rgba(74, 74, 69, 0.28);
+  --brillo: rgba(74, 74, 69, 0.04);
+  --foco: #7ba889;
+  --sombra: 0 8px 22px rgba(74, 74, 69, 0.08);
+  --sombra-suave: 0 4px 14px rgba(74, 74, 69, 0.06);
+  --degradado-primario: linear-gradient(135deg, #8fb79b, #7ba889);
+  --degradado-azul: linear-gradient(135deg, #9db4c0, #8ba6b4);
+  --degradado-naranja: linear-gradient(135deg, #c9a66b, #bb9557);
+  --degradado-rojo: linear-gradient(135deg, #c08a8a, #b37b7b);
+  --degradado-tarjeta: linear-gradient(160deg, rgba(74, 74, 69, 0.03), rgba(255, 255, 255, 0) 60%);
+  color-scheme: light;
+}
+
+html[data-paleta="suave"] .btn-primario,
+html[data-paleta="suave"] .btn-azul,
+html[data-paleta="suave"] .btn-peligro,
+html[data-paleta="suave"] .btn-naranja {
+  color: #ffffff;
+}
+
+/* ---------- Filtro blanco y negro puro ---------- */
+html[data-bn="1"] body,
+html[data-bn="1"] dialog,
+html[data-bn="1"] #toast-root {
+  filter: grayscale(1);
+}
+
+/* ---------- Reset ---------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+* {
+  margin: 0;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  font-family: var(--fuente);
+  background: var(--fondo);
+  color: var(--texto);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(60rem 34rem at 85% -8%, rgba(16, 185, 129, 0.13), transparent 60%),
+    radial-gradient(48rem 30rem at 8% 105%, rgba(59, 130, 246, 0.12), transparent 62%),
+    var(--fondo-2);
+}
+
+html[data-paleta="contraste"] body::before,
+html[data-paleta="accesible"] body::before {
+  background: var(--fondo);
+}
+
+html[data-paleta="suave"] body::before {
+  background:
+    radial-gradient(55rem 30rem at 90% -5%, rgba(143, 183, 155, 0.18), transparent 65%),
+    radial-gradient(45rem 28rem at 5% 100%, rgba(157, 180, 192, 0.18), transparent 65%),
+    var(--fondo-2);
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+a {
+  color: var(--azul);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+a:hover {
+  color: var(--verde);
+}
+
+p {
+  color: var(--texto);
+}
+
+h1,
+h2,
+h3,
+h4 {
+  line-height: 1.22;
+  letter-spacing: -0.015em;
+  font-weight: 800;
+}
+
+h1 {
+  font-size: 1.4rem;
+}
+
+h2 {
+  font-size: 1.12rem;
+}
+
+h3 {
+  font-size: 1rem;
+}
+
+small {
+  font-size: 0.78rem;
+}
+
+::selection {
+  background: rgba(16, 185, 129, 0.35);
+}
+
+/* ---------- Accesibilidad base ---------- */
+:focus-visible {
+  outline: 3px solid var(--foco);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+.sr-only {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.skip-link {
+  position: fixed;
+  top: 0.5rem;
+  left: 50%;
+  transform: translate(-50%, -160%);
+  z-index: 200;
+  background: var(--verde);
+  color: #04150f;
+  font-weight: 800;
+  padding: 0.6rem 1rem;
+  border-radius: 0.6rem;
+  text-decoration: none;
+  transition: transform 0.2s;
+}
+
+.skip-link:focus {
+  transform: translate(-50%, 0);
+}
+
+/* Respeta a quien prefiere menos movimiento */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@keyframes girar {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes aparecer {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes subir-hoja {
+  from {
+    opacity: 0.6;
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes latido {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.04); }
+}
+
+@keyframes brillo-deslizante {
+  from { background-position: -200% 0; }
+  to { background-position: 200% 0; }
+}

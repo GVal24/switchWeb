@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="es-AR" data-paleta="estandar" data-bn="0">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Switch — Trueques y Voluntariado Comunitario</title>
+  <meta name="description" content="Switch conecta vecinos e instituciones para intercambiar objetos y servicios, sumar voluntariado y construir comunidad.">
+  <meta name="theme-color" content="#0B132B">
+  <meta name="color-scheme" content="dark light">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Switch">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/favicon.png" sizes="64x64" type="image/png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="css/tema.css">
+  <link rel="stylesheet" href="css/componentes.css">
+  <link rel="stylesheet" href="css/pantallas.css">
+</head>
+<body>
+  <a class="skip-link" href="#contenido">Saltar al contenido principal</a>
+
+  <div id="app" class="app-shell">
+    <div id="banner-suspension" class="shell-banner" hidden></div>
+    <main id="contenido" class="app-main" tabindex="-1" aria-live="off">
+      <div class="splash" id="splash">
+        <div class="splash-logo" aria-hidden="true"></div>
+        <p class="splash-texto">Cargando Switch…</p>
+      </div>
+    </main>
+    <nav id="bottomnav" class="bottomnav" aria-label="Navegación principal"></nav>
+  </div>
+
+  <div id="dialog-root"></div>
+  <div id="toast-root" class="toast-root" role="status" aria-live="polite" aria-atomic="false"></div>
+  <p id="anuncio" class="sr-only" aria-live="polite"></p>
+
+  <noscript>
+    <div class="noscript">Switch necesita JavaScript para funcionar. Activá JavaScript en tu navegador y volvé a cargar la página.</div>
+  </noscript>
+
+  <!-- Al publicar la web separada del backend (por ejemplo, web en Vercel y
+       backend en Render), descomentá la línea de abajo y poné la URL de tu
+       backend sin la barra final. Si la web y el backend van juntos, dejalo
+       comentado. -->
+  <!-- <script>window.SWITCH_API_URL = 'https://TU-BACKEND.onrender.com/api';</script> -->
+  <script src="js/config.js"></script>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

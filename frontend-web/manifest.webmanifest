@@ -1,0 +1,56 @@
+{
+  "name": "Switch - Trueques y voluntariado",
+  "short_name": "Switch",
+  "description": "Intercambiá bienes y servicios, colaborá con instituciones del barrio y activá tu Nexo Social.",
+  "lang": "es-AR",
+  "dir": "ltr",
+  "start_url": "./index.html",
+  "scope": "./",
+  "id": "./",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "portrait-primary",
+  "background_color": "#0B132B",
+  "theme_color": "#0B132B",
+  "categories": ["social", "lifestyle", "shopping"],
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Catálogo",
+      "short_name": "Catálogo",
+      "url": "./index.html#/catalogo",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Voluntariado",
+      "short_name": "Voluntariado",
+      "url": "./index.html#/voluntariado",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Mis trueques",
+      "short_name": "Trueques",
+      "url": "./index.html#/trueques",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

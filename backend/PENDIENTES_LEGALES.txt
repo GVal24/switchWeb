@@ -1,0 +1,108 @@
+================================================================================
+PENDIENTES LEGALES — PROYECTO SWITCH
+================================================================================
+
+Este archivo es interno de trabajo. NO se muestra en la app.
+
+Los textos que lee la persona usuaria (backend/src/content/legales.js) están
+redactados contra lo que el sistema hace hoy: describen el funcionamiento real
+y no prometen nada que el código no cumpla. Por eso no incluyen listas de
+pendientes. Lo que falta completar está acá.
+
+Fecha de este documento: 2026-09-30
+Versión de los textos legales: 1.0.0
+
+
+--------------------------------------------------------------------------------
+1. ANTES DE PUBLICAR LA APP — OBLIGATORIO POR LEY
+--------------------------------------------------------------------------------
+
+1.1 Identificación de quien suscribe el contrato
+    Falta: razón social o nombre completo, domicilio, correo de contacto
+    y CUIT de quien opera la Plataforma.
+    Por qué importa: los Términos y Condiciones no pueden publicarse sin
+    identificar al responsable del contrato.
+
+1.2 Identificación del Responsable del Tratamiento
+    Falta: nombre o razón social, domicilio, correo electrónico de contacto
+    y CUIT.
+    Por qué importa: la Ley 25.326 (art. 3) exige identificar al responsable
+    del tratamiento. Sin esto la Política de Privacidad NO cumple la ley.
+
+1.3 Titular de los derechos acreditados
+    Falta: los datos de quien owns la marca Switch (titularidad de marca,
+    logotipos y código fuente).
+
+
+--------------------------------------------------------------------------------
+2. ANTES DE PUBLICAR LA APP — DECISIÓN COMERCIAL
+--------------------------------------------------------------------------------
+
+2.1 Plazos de conservación
+    Falta definir y publicar el plazo de conservación de cada categoría de
+    dato. Incluye el caso especial del material reservado por posible
+    representación de un menor de edad: hay que decidir por cuánto tiempo se
+    conserva antes de remitirlo o de eliminarlo.
+
+2.2 Canal de contacto para ejercer derechos
+    Falta: publicar el canal concreto (correo, formulario, teléfono) y
+    designar a quién responde las solicitudes de acceso, rectificación,
+    supresión y los demás derechos del titular.
+
+2.3 Procedimiento ante incidentes de seguridad
+    Falta: cómo se notifica un incidente de seguridad a los titulares de los
+    datos y en qué plazos.
+
+
+--------------------------------------------------------------------------------
+3. CONFIGURACIÓN TÉCNICA — ANTES DE USAR NÚMEROS REALES
+--------------------------------------------------------------------------------
+
+3.1 Identificar el proveedor de mensajería
+    Falta: qué proveedor se usa efectivamente (Twilio, Vonage, Meta u otro),
+    su domicilio, el país desde el que presta servicio, y si la entrega
+    implica transferencia internacional de datos.
+    Los textos ya explican el rol del proveedor (encargado del tratamiento,
+    no destinatario final); falta nombrarlo.
+
+3.2 Datos de la aplicación
+    El código de un solo uso (OTP) se muestra en pantalla y se imprime en la
+    consola cuando el proveedor es MOCK. Eso es sólo para desarrollo.
+    Para producción hay que definir y cargar las credenciales reales y
+    verificar que el código nunca se exponga en la respuesta de la API ni en
+    la pantalla.
+
+
+--------------------------------------------------------------------------------
+4. NOTAS SOBRE DECISIONES YA TOMADAS
+--------------------------------------------------------------------------------
+
+4.1 No se implementa la figura de Delegado Digital.
+    Se retiró del texto de los Términos porque la funcionalidad no existe en
+    el sistema. Si más adelante se implementa, hay que reincorporar la cláusula.
+
+4.2 El filtro automático de imágenes NO detecta menores de edad.
+    Sólo hace control técnico del archivo (formato real, dimensiones, peso,
+    animación) y elimina metadatos, que pueden incluir coordenadas GPS.
+    La detección de una persona menor la hace una persona mirando la imagen.
+    Los textos lo dicen así, sin atribuirle al sistema una capacidad que no
+    tiene.
+
+4.3 Una imagen marcada como posible menor NO se borra.
+    Se conserva de forma restringida con registro de quién la revisó y
+    cuándo, para poder remitirla a la autoridad de protección de las
+    infancias, y se suspende la cuenta de quien la publicó.
+
+4.4 El teléfono nunca se publica.
+    No aparece en el catálogo, ni en perfiles ajenos, ni en endpoints
+    públicos. Se usa sólo para el OTP.
+
+4.5 Aceptación con huella.
+    Cada aceptación registra versión, fecha, IP y un hash SHA-256 del texto
+    vigente. Permite demostrar qué decía el documento en el momento de la
+    aceptación, aunque después cambie.
+
+
+================================================================================
+Este archivo no forma parte de la aplicación ni se distribuye con ella.
+================================================================================
