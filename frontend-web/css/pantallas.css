@@ -11,6 +11,13 @@
   padding: 1.4rem 1.15rem 1.8rem;
 }
 
+@media (min-width: 960px) {
+  .pantalla-login {
+    max-width: 26rem;
+    margin: 0 auto;
+  }
+}
+
 .login-hero {
   text-align: center;
   margin-bottom: 1.2rem;
@@ -151,7 +158,7 @@
 .paso.activo .paso-num {
   background: var(--verde);
   border-color: var(--verde);
-  color: #04150f;
+  color: #ffffff;
 }
 
 .paso.listo .paso-num {
@@ -281,6 +288,12 @@
   }
 }
 
+@media (min-width: 1200px) {
+  .cat-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
 .pub-card {
   position: relative;
   display: flex;
@@ -312,8 +325,8 @@
   position: relative;
   height: var(--alto-imagen, 150px);
   background:
-    radial-gradient(120% 100% at 20% 0%, rgba(59, 130, 246, 0.24), transparent 60%),
-    linear-gradient(150deg, #1a2a4d, #101a33);
+    radial-gradient(120% 100% at 20% 0%, rgba(20, 184, 166, 0.22), transparent 60%),
+    linear-gradient(150deg, #ccfbf1, #dcfce7);
   overflow: hidden;
   flex: 0 0 auto;
 }
@@ -336,13 +349,13 @@
   gap: 0.4rem;
   padding: 0.5rem;
   text-align: center;
-  color: rgba(248, 249, 250, 0.55);
+  color: rgba(15, 23, 42, 0.5);
 }
 
 .pub-imagen-icono .icono {
   width: 2.1rem;
   height: 2.1rem;
-  color: rgba(248, 249, 250, 0.62);
+  color: rgba(13, 148, 136, 0.6);
 }
 
 .pub-imagen-marca {
@@ -433,10 +446,10 @@ html[data-paleta="suave"] .pub-imagen-icono .icono {
   padding: 0.2rem 0.45rem;
   border-radius: 99px;
   background: linear-gradient(120deg, #fbbf24, #f59e0b);
-  color: #211500;
+  color: #422006;
   font-size: 0.62rem;
   font-weight: 900;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.18);
 }
 
 .pub-destacada .icono {
@@ -1333,10 +1346,10 @@ html[data-paleta="suave"] .pub-imagen-icono .icono {
   place-items: center;
   gap: 0.5rem;
   height: 15rem;
-  color: #fff;
+  color: var(--texto);
   text-align: center;
   padding: 1rem;
-  background: #10131c;
+  background: var(--tarjeta-2);
 }
 
 .qr-error .icono {
@@ -1346,7 +1359,7 @@ html[data-paleta="suave"] .pub-imagen-icono .icono {
 }
 
 .qr-error p {
-  color: #d7dce5;
+  color: var(--texto-suave);
   font-size: 0.8rem;
   line-height: 1.5;
 }
@@ -1520,8 +1533,8 @@ html[data-paleta="suave"] .pub-imagen-icono .icono {
 }
 
 .paleta-muestra.estandar {
-  background: #1c2541;
-  color: #f8f9fa;
+  background: #0d9488;
+  color: #ffffff;
 }
 
 .paleta-muestra.accesible {

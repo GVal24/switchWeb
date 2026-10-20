@@ -1,6 +1,8 @@
-# Switch — Red de Trueques y Voluntariado Comunitario
+# Switch — Web (PWA de Trueques y Voluntariado Comunitario)
 
 Switch es una plataforma que conecta a los vecinos de una ciudad con las instituciones comunitarias de su comunidad y les permite intercambiar objetos y servicios entre pares (P2P). La app premia la participación real: cada trueque completado o voluntariado verificado genera **Impacto Comunitario** (niveles, puntos e insignias) que mejora la reputación del vecino y la visibilidad de sus publicaciones.
+
+Este repositorio contiene la **versión web progresiva (PWA)** de Switch, que se puede usar desde cualquier teléfono o navegador, sin instalar nada desde una tienda de aplicaciones.
 
 <p align="center">
   <img src="docs/screenshots/logo.png" width="120" alt="Switch">
@@ -8,13 +10,15 @@ Switch es una plataforma que conecta a los vecinos de una ciudad con las institu
 
 ---
 
-## 📸  Capturas de la app
+## 📸 Capturas
+
+> Las imágenes de `docs/screenshots/` son de la app móvil original. Se reemplazarán por capturas de la versión web cuando esté publicada.
 
 | Voluntariado | Catálogo P2P | Perfil e insignias |
 |:---:|:---:|:---:|
 | ![Voluntariado](docs/screenshots/voluntariado.jpg) | ![Catálogo](docs/screenshots/catalogo.jpg) | ![Perfil](docs/screenshots/perfil.jpg) |
 
-| Accesibilidad | Panel admin | Panel chat | 
+| Accesibilidad | Panel admin | Chat |
 |:---:|:---:|:---:|
 | ![Accesibilidad](docs/screenshots/accesibilidad.jpg) | ![Admin](docs/screenshots/admin.jpg) | ![Chat](docs/screenshots/chat.jpg) |
 
@@ -24,177 +28,83 @@ Switch es una plataforma que conecta a los vecinos de una ciudad con las institu
 
 | Capa | Tecnología |
 |---|---|
-| App móvil | Flutter (Dart)|
+| Web (PWA) | HTML, CSS y JavaScript (ES Modules), sin dependencias externas |
 | Backend | Node.js + Express (API REST) |
 | Base de datos | PostgreSQL |
 | Autenticación | JWT (JSON Web Tokens) + bcrypt |
 | Archivos | Multer (subida de imágenes) |
-| QR / Geolocalización | `mobile_scanner`, `geolocator`, `qrcode` |
-| Gráficos | `fl_chart` (dashboard admin) |
+| QR / Geolocalización | Lectura de QR en el navegador (`BarcodeDetector`) + `geolocation` |
+| Despliegue | Web en **Vercel**, backend en **Render**, base de datos en **Neon** |
+
+### Características de la PWA
+
+- **Instalable**: se agrega a la pantalla de inicio del teléfono como una app (`manifest.webmanifest`).
+- **Funciona offline (parcial)**: un service worker (`sw.js`) cachea la interfaz; las acciones que necesitan datos requieren conexión.
+- **Accesibilidad**: 4 paletas (estándar, vista accesible, alto contraste y paleta suave), escala de texto, modo blanco y negro, navegación por teclado, foco visible y respeto por `prefers-reduced-motion`.
+- **Sin CDN**: todos los recursos se sirven desde el propio proyecto.
+
+---
 
 ## Funcionalidades principales
 
 - **Voluntariado verificado**: las instituciones publican sus necesidades con prioridad (General / Prioritaria / Urgente). El vecino coordina por chat, se presenta y **escanea el QR físico de la institución** para activar su *Nexo Social*.
-- **Vigencia inteligente del Nexo Social**: los días de validez se calculan según la urgencia de la necesidad (General 45 / Prioritaria 75 / Urgente 105 días base; 60 si la visita no apunta a una necesidad concreta), el esfuerzo estimado de la tarea (Medio +15 / Alto +30) y el nivel comunitario del voluntario (nivel 3 +30, 4 +60, 5 +120).
-- **Catálogo P2P**: publicación de objetos y servicios con **clasificación automática de esfuerzo** (el backend analiza título y descripción), búsqueda, filtros y propuestas de trueque multi-ítem.
+- **Vigencia inteligente del Nexo Social**: los días de validez se calculan según la urgencia de la necesidad, el esfuerzo estimado de la tarea y el nivel comunitario del voluntario.
+- **Catálogo P2P**: publicación de objetos y servicios con **clasificación automática de esfuerzo**, búsqueda, filtros y propuestas de trueque multi-ítem.
 - **Gamificación**: niveles de comunidad — *Semilla del Barrio → Brote Activo → Vecino Confiable → Motor Solidario → Pilar de la Comunidad* — con puntos e insignias, incluidas **insignias secretas**.
-- **Recompensas de comunidad**: las publicaciones de vecinos nivel 4+ se destacan en el catálogo.
 - **Chat integrado** entre vecinos y con instituciones, sistema de reportes y reseñas.
-- **Panel de administración**: métricas de la red (usuarios activos, trueques del mes, voluntariados QR, tasa de eficacia), moderación de reportes (desestimar, suspender, dar de baja) y gestión de **sugerencias de esfuerzo** que la comunidad reporta cuando el nivel estimado de una publicación no coincide con la realidad.
-- **Accesibilidad**: 4 paletas temáticas — estándar, vista accesible (texto grande), alto contraste y paleta suave (baja estimulación sensorial) — con factores dinámicos de texto e iconos.
+- **Panel de administración**: métricas de la red, moderación de publicaciones e imágenes, reportes (desestimar, suspender, dar de baja), buzón de contacto y sugerencias de esfuerzo.
 
 ---
 
-## Arquitectura
+## Estructura del proyecto
 
-App Flutter → capa de servicios Dart (`ApiService`) → API REST Express (`/api`) → controladores → modelos → PostgreSQL.
-
-El detalle (diagrama de contexto, casos de uso y modelo entidad-relación con las 10 tablas) está en [`diagramas_mermaid_srs.md`](diagramas_mermaid_srs.md).
-
-## Diagrama de clases (backend)
-
-```mermaid
-classDiagram
-    direction LR
-
-    class AuthController {
-        +registrarUsuario(req, res)
-        +loginUsuario(req, res)
-    }
-    class AuthService {
-        +generarToken(usuario) String
-        +verificarToken(token) Payload
-    }
-    class InstController {
-        +listarInstituciones(req, res)
-        +obtenerCuposAbiertos(req, res)
-        +validarPresenciaQR(req, res)
-        +registrarInstitucion(req, res)
-    }
-    class P2PController {
-        +listarCatalogoP2P(req, res)
-        +listarMisPublicaciones(req, res)
-        +previsualizarEsfuerzo(req, res)
-        +subirImagen(req, res)
-        +crearPublicacionP2P(req, res)
-    }
-    class IntercambioController {
-        +proponerIntercambio(req, res)
-        +listarMisPropuestas(req, res)
-        +responderPropuesta(req, res)
-        +confirmarTrueque(req, res)
-    }
-    class ChatController {
-        +obtenerMensajes(req, res)
-        +enviarMensaje(req, res)
-    }
-    class SugerenciaController {
-        +sugerirEsfuerzo(req, res)
-        +listarSugerencias(req, res)
-        +aplicarSugerencia(req, res)
-        +descartarSugerencia(req, res)
-    }
-    class ReporteController {
-        +reportarUsuario(req, res)
-        +listarReportes(req, res)
-        +desestimarReporte(req, res)
-        +darDeBajaUsuario(req, res)
-        +suspenderUsuario(req, res)
-    }
-    class UsuarioController {
-        +obtenerMiPerfil(req, res)
-    }
-    class AdminController {
-        +obtenerEstadisticasAdmin(req, res)
-    }
-
-    class UsuarioModel {
-        +crear(datos)
-        +buscarPorDni(dni)
-        +buscarPorDniOTelefono(dni, telefono)
-        +obtenerPerfilConEstadisticas(id)
-        +obtenerNombrePorId(id)
-        +suspender(id, dias)
-        +levantarSuspension(id)
-        +darDeBaja(id)
-    }
-    class InstitucionModel {
-        +obtenerTodas()
-        +obtenerPorId(id)
-        +obtenerPorQrHash(hash)
-        +crearConNecesidades(datos)
-    }
-    class P2PModel {
-        +obtenerCatalogoDisponible(filtros)
-        +obtenerPorIds(ids)
-        +obtenerPublicacionesDeUsuario(id)
-        +crearPublicacion(datos)
-    }
-    class IntercambioModel {
-        +crear(datos)
-        +obtenerPorId(id)
-        +listarPorUsuario(id)
-        +responder(id, aceptada)
-        +confirmar(id, usuarioId)
-    }
-    class VoluntariadoModel {
-        +registrarNexoSocial(datos) Vigencia
-        +verificarNexoSocialActivo(usuarioId)
-        +obtenerCuposPorInstitucion(id)
-    }
-    class ChatModel {
-        +crearMensaje(datos)
-        +obtenerConversacion(emisorId, receptorId)
-    }
-    class ResenaModel {
-        +crear(datos)
-    }
-    class ReporteModel {
-        +crear(datos)
-        +obtenerTodos()
-        +actualizarEstado(id, estado)
-    }
-    class SugerenciaModel {
-        +sugerir(datos)
-        +listarPendientes()
-        +aplicar(id)
-        +descartar(id)
-    }
-    class AdminModel {
-        +obtenerMetricasGlobales()
-    }
-
-    class Gamificacion {
-        +calcularImpacto(estadisticas) Impacto
-        +calcularBonus(estadisticas) Number
-        +NIVELES[]
-        +INSIGNIAS[]
-    }
-    class AuthMiddleware {
-        +requerirSesion(req, res, next)
-        +requerirAdmin(req, res, next)
-    }
-    class ClasificadorEsfuerzo {
-        +clasificar(titulo, descripcion, tipo)
-    }
+```
+switchWeb/
+├── frontend-web/              # La PWA (lo que se publica en Vercel)
+│   ├── index.html             # Estructura base
+│   ├── manifest.webmanifest   # Configuración de la PWA instalable
+│   ├── sw.js                  # Service worker (cache / offline)
+│   ├── css/                   # tema.css, componentes.css, pantallas.css
+│   ├── icons/                 # Íconos de la app
+│   └── js/
+│       ├── app.js             # Arranque, armazón y navegación
+│       ├── config.js          # URL del backend
+│       ├── store.js           # Sesión y preferencias de accesibilidad
+│       ├── api.js             # Cliente de la API REST
+│       ├── ui.js              # Componentes e íconos
+│       ├── router.js          # Enrutador por hash
+│       └── screens/           # Pantallas (públicas y admin/)
+├── backend/                   # API REST (lo que se publica en Render)
+│   ├── src/
+│   │   ├── config/            # Conexión a PostgreSQL
+│   │   ├── controllers/       # Capa HTTP
+│   │   ├── middlewares/       # JWT, errores, asyncWrapper
+│   │   ├── models/            # Acceso a datos (SQL)
+│   │   ├── routes/            # Endpoints /api
+│   │   └── utils/             # Gamificación, clasificador, geo, imágenes
+│   ├── scripts/generarQrs.js
+│   └── qrs_instituciones/     # PNG de los QR de presencia
+├── docs/screenshots/          # Capturas usadas en el README
+├── .env.example               # Plantilla de variables de entorno
+├── schema.sql                 # DDL completo (14 tablas)
+├── seed.sql                   # Datos de ejemplo
+└── diagramas_mermaid_srs.md   # UML del sistema
 ```
 
-Los nombres y métodos reflejan los `module.exports` reales de `backend/src/controllers/` y `backend/src/models/`. Nota: `requerirSesion` y `requerirAdmin` viven en `backend/src/middlewares/auth.js`, no en un controller.
-
-Los controladores son finos: validan entrada y delegan en los modelos, que encapsulan todo el SQL. Los middlewares atraviesan todas las capas: `auth.js` protege rutas con JWT, `errorHandler.js` centraliza errores, `asyncWrapper.js` evita try/catch repetidos.
+El backend también sirve la PWA en `/app/` cuando se ejecuta en el mismo servidor, así que puede usarse **todo junto en Render** sin necesidad de Vercel.
 
 ---
 
-## Puesta en marcha
+## Puesta en marcha (desarrollo local)
 
 ### Requisitos
 
 - Node.js 18+
-- PostgreSQL 14+
-- Flutter SDK 3.x
-- Un teléfono/emulador Android (para cámara y GPS)
+- PostgreSQL 14+ (local, o una base en Neon)
 
 ### 1. Base de datos
+
+Con PostgreSQL local:
 
 ```bash
 psql -U postgres -c "CREATE DATABASE switch_db;"
@@ -202,9 +112,9 @@ psql -U postgres -d switch_db -f schema.sql
 psql -U postgres -d switch_db -f seed.sql
 ```
 
-### 2. Backend
+O cargá `schema.sql` y luego `seed.sql` en el editor SQL de Neon (en ese orden).
 
-Crear `backend/.env` (ver valores de ejemplo en la sección siguiente) y luego:
+### 2. Backend
 
 ```bash
 cd backend
@@ -212,60 +122,83 @@ npm install
 npm run dev     # o: npm start
 ```
 
-Variables de entorno:
+Las variables se leen desde `.env` en la raíz del proyecto. Copiá `.env.example` como `.env` y completá:
 
 ```env
 PORT=3000
-NODE_ENV=development
-DB_USER=postgres
-DB_PASSWORD=tu_contraseña
-DB_HOST=localhost
+DB_USER=usuario
+DB_PASSWORD=clave
+DB_HOST=localhost          # o el host de Neon
 DB_PORT=5432
-DB_NAME=switch_db
+DB_NAME=switch_db          # o neondb
+DB_SSL=false               # true en Neon/Supabase/Render (o se detecta solo por el host)
 JWT_SECRET=una_clave_larga_y_secreta
-GPS_VALIDACION_ACTIVA=false   # true = exige estar a menos de 200m al escanear el QR
+GPS_VALIDACION_ACTIVA=false
+ORIGENES_PERMITIDOS=       # vacío = permite cualquier origen (local)
 ```
 
-### 3. Frontend
+### 3. Web
 
-```bash
-cd frontend
-flutter pub get
-flutter run
+Con el backend corriendo en el puerto 3000, la web se sirve en:
+
+```
+http://localhost:3000/app/
 ```
 
-> ⚠️ Si probás en un teléfono físico, cambiá la IP del servidor en `lib/services/api_service.dart` por la IP local de tu PC (ej: `http://192.168.0.X:3000`).
+También se puede abrir `frontend-web/index.html` con un servidor estático (Live Server, etc.); en ese caso la web apunta sola al backend en el puerto 3000 del mismo host.
 
 ### 4. Códigos QR de las instituciones
 
-Para generar los QR imprimibles de las instituciones cargadas en el seed:
-
 ```bash
 cd backend
-npm install qrcode
 node scripts/generarQrs.js   # guarda los PNG en backend/qrs_instituciones/
 ```
 
-### 5. Pruebas
+---
 
-Las pruebas son de widget (`flutter_test`) y no necesitan backend: interceptan el HTTP con `HttpOverrides` y fakean las respuestas de la API.
+## Despliegue en la nube
 
-```bash
-cd frontend
-flutter test        # 12 pruebas
-flutter analyze     # 0 errores, 0 warnings
+El sistema se reparte en tres servicios:
+
+```
+   ┌─────────┐     ┌──────────────┐     ┌───────────┐
+   │  Vercel │────▶│    Render    │────▶│   Neon    │
+   │  (web)  │ API │  (backend)   │ SQL │ (base de  │
+   │         │     │              │     │  datos)   │
+   └─────────┘     └──────────────┘     └───────────┘
 ```
 
-| Archivo | Qué cubre |
-|---|---|
-| `test/accesibilidad_test.dart` | Navegación a Accesibilidad y uso de sus controles (escala, paletas). |
-| `test/admin_login_dialog_test.dart` | Diálogo de acceso administrativo con tema oscuro, paleta suave y teclado. |
-| `test/admin_dashboard_repro_test.dart` | Panel admin con datos reales: evita `BoxConstraints forces an infinite width` y desbordes de `Row` a **384 dp** (la resolución lógica de un teléfono común) con los 4 temas y escala de texto 1.0 y 1.5. |
-| `test/admin_flow_repro_test.dart` | Flujo completo sobre `SwitchApp` real: login de vecino, paletas, escala 1.5 y teclado sin desbordes. |
+### 1. Base de datos (Neon)
+
+1. Crear un proyecto en [neon.tech](https://neon.tech) y copiar la cadena de conexión.
+2. En el **SQL Editor**, ejecutar `schema.sql` y luego `seed.sql`.
+
+### 2. Backend (Render)
+
+1. Crear un **Web Service** apuntando a este repositorio.
+2. **Root Directory:** `backend`
+3. **Build Command:** `npm install`  ·  **Start Command:** `npm start`
+4. Cargar las variables de entorno (las de Neon + `JWT_SECRET` + `ORIGENES_PERMITIDOS`).
+
+### 3. Web (Vercel)
+
+1. Importar el repositorio en [vercel.com](https://vercel.com).
+2. **Root Directory:** `frontend-web`
+3. En `frontend-web/index.html`, descomentar y completar la línea que apunta al backend:
+
+```html
+<script>window.SWITCH_API_URL = 'https://TU-BACKEND.onrender.com/api';</script>
+```
+
+4. Copiar la URL de Vercel y agregarla a `ORIGENES_PERMITIDOS` en Render.
+
+> Alternativa más simple: usar **solo Render** (sin Vercel). El backend sirve la web en `https://TU-BACKEND.onrender.com/app/`.
+
+---
 
 ## Usuarios del seed
 
-Todos los vecinos y delegados del seed comparten la contraseña `clave123`; el administrador tiene la suya.
+Todos los vecinos y delegados comparten la contraseña `clave123`; el administrador tiene la suya.
 
 | ID | Rol | DNI | Nombre | Contraseña |
 |---|---|---|---|---|
@@ -284,37 +217,8 @@ Todos los vecinos y delegados del seed comparten la contraseña `clave123`; el a
 
 Los hashes QR de las instituciones del seed están en `seed.sql`.
 
-## Estructura del proyecto
-
-```
-switch/
-├── backend/
-│   ├── src/
-│   │   ├── config/          # Conexión a PostgreSQL
-│   │   ├── controllers/     # Capa HTTP (auth, instituciones, P2P, intercambio, chat, reportes, admin…)
-│   │   ├── middlewares/     # JWT, manejo de errores, asyncWrapper
-│   │   ├── models/          # Acceso a datos (SQL)
-│   │   ├── routes/          # Definición de endpoints /api (index.js)
-│   │   ├── services/        # Lógica de tokens
-│   │   └── utils/           # Gamificación, clasificador de esfuerzo, geo, errores
-│   ├── scripts/generarQrs.js
-│   ├── qrs_instituciones/   # PNG de los QR de presencia
-│   ├── qrs_print.html       # Hoja imprimible con los QR
-│   └── uploads/             # Imágenes publicadas
-├── frontend/
-│   ├── lib/
-│   │   ├── screens/         # Pantallas (voluntariado, catálogo, perfil, chat, admin…)
-│   │   ├── services/        # Consumo de la API y sensores (QR, GPS)
-│   │   ├── theme/           # Paletas y accesibilidad visual
-│   │   ├── widgets/         # Componentes reutilizables (gráficos, logo)
-│   │   └── main.dart
-│   └── test/                # Pruebas de widget (12)
-├── docs/screenshots/        # Capturas usadas en el README
-├── schema.sql               # DDL completo (10 tablas)
-├── seed.sql                 # Datos de ejemplo
-└── diagramas_mermaid_srs.md # UML completo del sistema
-```
+---
 
 ## Documentación adicional
 
-- [Diagramas Mermaid](diagramas_mermaid_srs.md): diagrama de contexto, casos de uso agrupados por funcionalidad y modelo entidad-relación.
+- [Diagramas Mermaid](diagramas_mermaid_srs.md): diagrama de contexto, casos de uso y modelo entidad-relación.

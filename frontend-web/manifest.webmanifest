@@ -9,9 +9,9 @@
   "id": "./",
   "display": "standalone",
   "display_override": ["standalone", "minimal-ui"],
-  "orientation": "portrait-primary",
-  "background_color": "#0B132B",
-  "theme_color": "#0B132B",
+  "orientation": "any",
+  "background_color": "#F0FDF4",
+  "theme_color": "#0D9488",
   "categories": ["social", "lifestyle", "shopping"],
   "icons": [
     {

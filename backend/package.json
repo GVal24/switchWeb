@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "Backend API RESTful para la plataforma Switch - Red RMC P2P",
   "main": "src/index.js",
+  "engines": {
+    "node": ">=20 <21"
+  },
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js"

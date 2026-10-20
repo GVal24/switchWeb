@@ -122,7 +122,7 @@ self.addEventListener('fetch', (evento) => {
             guardada ||
             (await caches.match('./index.html')) ||
             new Response(
-              '<!doctype html><meta charset="utf-8"><title>Switch sin conexión</title><body style="font-family:system-ui;background:#0B132B;color:#F8F9FA;padding:2rem"><h1>Sin conexión</h1><p>Volvé a abrir Switch cuando tengas internet.</p></body>',
+              '<!doctype html><meta charset="utf-8"><title>Switch sin conexión</title><body style="font-family:system-ui;background:#F0FDF4;color:#0F172A;padding:2rem"><h1>Sin conexión</h1><p>Volvé a abrir Switch cuando tengas internet.</p></body>',
               { headers: { 'Content-Type': 'text/html; charset=utf-8' } }
             )
           );

@@ -160,7 +160,7 @@ export const Store = {
     if (meta) {
       meta.setAttribute(
         'content',
-        paleta === 'suave' ? '#F6F3EE' : paleta === 'estandar' ? '#0B132B' : '#000000'
+        paleta === 'suave' ? '#F6F3EE' : paleta === 'estandar' ? '#0D9488' : '#000000'
       );
     }
   },
