@@ -10,6 +10,11 @@ const PALETAS = [
     desc: 'Azul noche y verde',
   },
   {
+    id: 'menta',
+    nombre: 'Clara',
+    desc: 'Menta, turquesa y coral',
+  },
+  {
     id: 'accesible',
     nombre: 'Alta legibilidad',
     desc: 'Negro, blanco y bordes marcados',
@@ -33,9 +38,11 @@ export async function render(contenedor) {
       ? 'contraste'
       : Store.acc.paletaSuave
         ? 'suave'
-        : Store.acc.vistaAccesible
-          ? 'accesible'
-          : 'estandar';
+        : Store.acc.paletaMenta
+          ? 'menta'
+          : Store.acc.vistaAccesible
+            ? 'accesible'
+            : 'estandar';
 
   contenedor.innerHTML = `
     <section class="pantalla pantalla-accesibilidad">
@@ -158,17 +165,21 @@ export async function render(contenedor) {
       if (id === 'contraste') {
         Store.guardarAccesibilidad({ altoContraste: true, paletaSuave: false });
       } else if (id === 'suave') {
-        Store.guardarAccesibilidad({ altoContraste: false, paletaSuave: true });
+        Store.guardarAccesibilidad({ altoContraste: false, paletaSuave: true, paletaMenta: false });
+      } else if (id === 'menta') {
+        Store.guardarAccesibilidad({ altoContraste: false, paletaSuave: false, paletaMenta: true });
       } else if (id === 'accesible') {
         Store.guardarAccesibilidad({
           altoContraste: false,
           paletaSuave: false,
+          paletaMenta: false,
           vistaAccesible: true,
         });
       } else {
         Store.guardarAccesibilidad({
           altoContraste: false,
           paletaSuave: false,
+          paletaMenta: false,
           vistaAccesible: false,
         });
       }

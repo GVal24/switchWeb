@@ -5,7 +5,7 @@
    - Estrategia: red primero para navegación; stale-while-revalidate para
      los archivos estáticos propios. */
 
-const VERSION = 'switch-v1.0.0';
+const VERSION = 'switch-v1.1.0';
 const CACHE_ESTATICO = `${VERSION}-estatico`;
 const CACHE_NAVEGACION = `${VERSION}-navegacion`;
 const SCOPE = new URL('./', self.location.href).pathname;
@@ -132,18 +132,19 @@ self.addEventListener('fetch', (evento) => {
     return;
   }
 
-  // Estáticos: responder con lo guardado y actualizar en segundo plano.
+  // Estáticos: red primero (para que los cambios se vean al instante);
+  // si no hay conexión, se responde con lo guardado.
   evento.respondWith(
     (async () => {
       const cache = await caches.open(CACHE_ESTATICO);
-      const guardada = await cache.match(req);
-      const red = fetch(req)
-        .then((respuesta) => {
-          if (respuesta.ok) cache.put(req, respuesta.clone());
-          return respuesta;
-        })
-        .catch(() => null);
-      return guardada || (await red) || Response.error();
+      try {
+        const respuesta = await fetch(req);
+        if (respuesta.ok) cache.put(req, respuesta.clone());
+        return respuesta;
+      } catch (e) {
+        const guardada = await cache.match(req);
+        return guardada || Response.error();
+      }
     })()
   );
 });

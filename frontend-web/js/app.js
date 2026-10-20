@@ -457,15 +457,25 @@ async function registrarServiceWorker() {
   if (!('serviceWorker' in navigator)) return;
   try {
     const registro = await navigator.serviceWorker.register('sw.js');
+
+    let recargando = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (recargando) return;
+      recargando = true;
+      window.location.reload();
+    });
+
     registro.addEventListener('updatefound', () => {
       const nuevo = registro.installing;
       if (!nuevo) return;
       nuevo.addEventListener('statechange', () => {
         if (nuevo.state === 'installed' && navigator.serviceWorker.controller) {
-          toast('Hay una versión nueva de Switch. Cerrá y abrí la app para actualizarla.', 'info', 7000);
+          toast('Actualizando Switch…', 'info', 2000);
         }
       });
     });
+
+    registro.update();
   } catch (e) {
     console.warn('No se pudo registrar el service worker:', e);
   }

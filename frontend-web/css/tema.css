@@ -7,6 +7,51 @@
 
   --fuente: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Roboto, Arial, sans-serif;
 
+  --fondo: #0b132b;
+  --fondo-2: #0e1730;
+  --tarjeta: #1c2541;
+  --tarjeta-2: #24325c;
+  --texto: #f8f9fa;
+  --texto-suave: #a4b0c4;
+  --logo-s: #f8f9fa;
+
+  --verde: #10b981;
+  --verde-oscuro: #059669;
+  --azul: #3b82f6;
+  --naranja: #f59e0b;
+  --rojo: #ef4444;
+  --amarillo: #fbbf24;
+
+  --borde: rgba(255, 255, 255, 0.08);
+  --borde-fuerte: rgba(255, 255, 255, 0.18);
+  --brillo: rgba(255, 255, 255, 0.05);
+  --foco: #60a5fa;
+  --texto-sobre-acento: #04150f;
+
+  --sombra: 0 14px 34px rgba(0, 0, 0, 0.32);
+  --sombra-suave: 0 6px 18px rgba(0, 0, 0, 0.22);
+
+  --degradado-primario: linear-gradient(135deg, #10b981 0%, #0ea5a0 100%);
+  --degradado-azul: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
+  --degradado-naranja: linear-gradient(135deg, #f59e0b 0%, #ea7317 100%);
+  --degradado-rojo: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  --degradado-tarjeta: linear-gradient(160deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0) 55%);
+
+  --radio-xs: 0.5rem;
+  --radio-sm: 0.75rem;
+  --radio: 0.9rem;
+  --radio-lg: 1.15rem;
+  --radio-xl: 1.5rem;
+
+  --alto-barra: 3.6rem;
+  --alto-nav: 4.35rem;
+  --alto-imagen: 150px;
+
+  color-scheme: dark;
+}
+
+/* ---------- Paleta clara (menta / turquesa / coral) ---------- */
+html[data-paleta="menta"] {
   --fondo: #f0fdf4;
   --fondo-2: #ffffff;
   --tarjeta: #ffffff;
@@ -26,6 +71,7 @@
   --borde-fuerte: rgba(15, 23, 42, 0.18);
   --brillo: rgba(13, 148, 136, 0.06);
   --foco: #0d9488;
+  --texto-sobre-acento: #ffffff;
 
   --sombra: 0 14px 34px rgba(15, 23, 42, 0.12);
   --sombra-suave: 0 6px 18px rgba(15, 23, 42, 0.08);
@@ -35,16 +81,6 @@
   --degradado-naranja: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%);
   --degradado-rojo: linear-gradient(135deg, #e11d48 0%, #be123c 100%);
   --degradado-tarjeta: linear-gradient(160deg, rgba(13, 148, 136, 0.05), rgba(255, 255, 255, 0) 55%);
-
-  --radio-xs: 0.5rem;
-  --radio-sm: 0.75rem;
-  --radio: 0.9rem;
-  --radio-lg: 1.15rem;
-  --radio-xl: 1.5rem;
-
-  --alto-barra: 3.6rem;
-  --alto-nav: 4.35rem;
-  --alto-imagen: 150px;
 
   color-scheme: light;
 }
@@ -202,6 +238,13 @@ body::before {
   z-index: 0;
   pointer-events: none;
   background:
+    radial-gradient(60rem 34rem at 85% -8%, rgba(16, 185, 129, 0.13), transparent 60%),
+    radial-gradient(48rem 30rem at 8% 105%, rgba(59, 130, 246, 0.12), transparent 62%),
+    var(--fondo-2);
+}
+
+html[data-paleta="menta"] body::before {
+  background:
     radial-gradient(60rem 34rem at 85% -8%, rgba(13, 148, 136, 0.12), transparent 60%),
     radial-gradient(48rem 30rem at 8% 105%, rgba(244, 63, 94, 0.08), transparent 62%),
     var(--fondo-2);
@@ -306,7 +349,7 @@ small {
   transform: translate(-50%, -160%);
   z-index: 200;
   background: var(--verde);
-  color: #04150f;
+  color: var(--texto-sobre-acento);
   font-weight: 800;
   padding: 0.6rem 1rem;
   border-radius: 0.6rem;

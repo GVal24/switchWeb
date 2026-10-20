@@ -9,6 +9,7 @@ const ACC_DEFECTO = {
   escala: 1,
   altoContraste: false,
   paletaSuave: false,
+  paletaMenta: false,
   blancoNegro: false,
   vistaAccesible: false,
 };
@@ -133,13 +134,18 @@ export const Store = {
         escala: Math.min(1.5, Math.max(1, num(localStorage.getItem('acc_escala_texto'), 1))),
         altoContraste: bool(localStorage.getItem('acc_alto_contraste'), false),
         paletaSuave: bool(localStorage.getItem('acc_paleta_suave'), false),
+        paletaMenta: bool(localStorage.getItem('acc_paleta_menta'), false),
         blancoNegro: bool(localStorage.getItem('acc_blanco_negro'), false),
         vistaAccesible: bool(localStorage.getItem('acc_vista_accesible'), false),
       };
     } catch (e) {
       this.acc = { ...ACC_DEFECTO };
     }
-    if (this.acc.altoContraste && this.acc.paletaSuave) this.acc.paletaSuave = false;
+    if (this.acc.altoContraste && (this.acc.paletaSuave || this.acc.paletaMenta)) {
+      this.acc.paletaSuave = false;
+      this.acc.paletaMenta = false;
+    }
+    if (this.acc.paletaSuave && this.acc.paletaMenta) this.acc.paletaMenta = false;
     return this.acc;
   },
 
@@ -151,16 +157,18 @@ export const Store = {
       ? 'contraste'
       : a.paletaSuave
         ? 'suave'
-        : a.vistaAccesible
-          ? 'accesible'
-          : 'estandar';
+        : a.paletaMenta
+          ? 'menta'
+          : a.vistaAccesible
+            ? 'accesible'
+            : 'estandar';
     html.setAttribute('data-paleta', paleta);
     html.setAttribute('data-bn', a.blancoNegro ? '1' : '0');
     const meta = document.querySelector('meta[name="theme-color"]');
     if (meta) {
       meta.setAttribute(
         'content',
-        paleta === 'suave' ? '#F6F3EE' : paleta === 'estandar' ? '#0D9488' : '#000000'
+        paleta === 'suave' ? '#F6F3EE' : paleta === 'menta' ? '#0D9488' : paleta === 'estandar' ? '#0B132B' : '#000000'
       );
     }
   },
@@ -171,13 +179,24 @@ export const Store = {
       ...parcial,
       escala: Math.min(1.5, Math.max(1, Number(parcial.escala ?? this.acc.escala))),
     };
-    if (this.acc.altoContraste) this.acc.paletaSuave = false;
-    if (this.acc.paletaSuave) this.acc.altoContraste = false;
+    if (this.acc.altoContraste) {
+      this.acc.paletaSuave = false;
+      this.acc.paletaMenta = false;
+    }
+    if (this.acc.paletaSuave) {
+      this.acc.altoContraste = false;
+      this.acc.paletaMenta = false;
+    }
+    if (this.acc.paletaMenta) {
+      this.acc.altoContraste = false;
+      this.acc.paletaSuave = false;
+    }
     try {
       const a = this.acc;
       localStorage.setItem('acc_escala_texto', String(a.escala));
       localStorage.setItem('acc_alto_contraste', a.altoContraste ? '1' : '0');
       localStorage.setItem('acc_paleta_suave', a.paletaSuave ? '1' : '0');
+      localStorage.setItem('acc_paleta_menta', a.paletaMenta ? '1' : '0');
       localStorage.setItem('acc_blanco_negro', a.blancoNegro ? '1' : '0');
       localStorage.setItem('acc_vista_accesible', a.vistaAccesible ? '1' : '0');
     } catch (e) {}
@@ -193,6 +212,7 @@ export const Store = {
           escala: 'acc_escala_texto',
           altoContraste: 'acc_alto_contraste',
           paletaSuave: 'acc_paleta_suave',
+          paletaMenta: 'acc_paleta_menta',
           blancoNegro: 'acc_blanco_negro',
           vistaAccesible: 'acc_vista_accesible',
         }[k];
