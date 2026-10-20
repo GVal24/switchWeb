@@ -87,7 +87,7 @@ html[data-paleta="menta"] {
 
 /* ---------- Escala de texto (1.0 – 1.5) ---------- */
 html {
-  font-size: calc(100% * var(--escala));
+  font-size: calc(102.5% * var(--escala));
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
 }
