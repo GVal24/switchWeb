@@ -92,9 +92,13 @@ app.use(
   '/app',
   express.static(path.resolve(__dirname, '../../frontend-web'), {
     extensions: ['html'],
+    etag: false,
+    lastModified: false,
     setHeaders: (res, archivo) => {
-      if (archivo.endsWith('sw.js') || archivo.endsWith('manifest.webmanifest')) {
-        res.setHeader('Cache-Control', 'no-cache');
+      if (archivo.endsWith('.js') || archivo.endsWith('.css') || archivo.endsWith('.html') || archivo.endsWith('sw.js') || archivo.endsWith('manifest.webmanifest')) {
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
       }
     },
   })
