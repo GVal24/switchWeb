@@ -25,7 +25,8 @@ export async function render(contenedor, ctx) {
   let perfil;
   try {
     perfil = await API.perfil();
-  } catch (e) {
+    if (Store.usuario) { Store.usuario = { ...Store.usuario, ...perfil }; }
+} catch (e) {
     if (e?.estado === 401 || e?.estado === 403 || /iniciar sesión/i.test(e?.message || '')) {
       Store.cerrarSesion();
       toast('Tu sesión expiró. Por favor ingresá nuevamente.', 'info');
