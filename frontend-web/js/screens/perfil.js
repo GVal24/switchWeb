@@ -1,4 +1,4 @@
-let cargandoPerfil=false;/* Mi perfil: datos personales, estadísticas, impacto comunitario, insignias,
+// vclean\nlet cargandoPerfil=false;/* Mi perfil: datos personales, estadísticas, impacto comunitario, insignias,
    accesos rápidos y mis publicaciones. */
 
 import { Store } from '../store.js';
