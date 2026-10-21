@@ -16,7 +16,7 @@ import {
   esfuerzo,
   imagenPublicacion,
   idPublicacion,
-  obtenerIdOferenteX,
+  getIdOferenteX,
   nombreOferente,
   fecha,
   debounce,
@@ -261,7 +261,7 @@ export async function render(contenedor) {
     const tipo = String(pub.tipo_item || 'OBJETO').toUpperCase();
     const calif = Number(pub.oferente_calificacion);
     const resenas = Number(pub.oferente_resenas);
-    const uid = obtenerIdOferente(pub);
+    const uid = getIdOferente(pub);
 
     return `
       <a class="pub-card" href="#/detalle/${encodeURIComponent(id)}" aria-label="${esc(
