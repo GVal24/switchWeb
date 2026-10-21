@@ -25,14 +25,14 @@ export async function render(contenedor, ctx) {
   let perfil;
   try {
     perfil = await API.perfil();
-    // Actualizamos los datos del usuario localmente sin disparar eventos globales para evitar el bucle
-    if (Store.usuario) {
-      Store.usuario = { ...Store.usuario, ...perfil };
-      try {
-        localStorage.setItem('switch_usuario', JSON.stringify(Store.usuario));
-      } catch (e) {}
-    }
   } catch (e) {
+    if (e?.estado === 401 || e?.estado === 403 || /iniciar sesión/i.test(e?.message || '')) {
+      Store.cerrarSesion();
+      toast('Tu sesión expiró. Por favor ingresá nuevamente.', 'info');
+      navegar('/login?volver=/perfil', { reemplazar: true });
+      return;
+    }
+
     contenedor.innerHTML = `<section class="pantalla">${errorEstado(
       e?.message || 'No pudimos cargar tu perfil.',
       '<button type="button" class="btn btn-secundario" data-reintentar>Reintentar</button>'
@@ -118,7 +118,7 @@ export async function render(contenedor, ctx) {
           <span>${progreso}% del nivel</span>
           <span>${
             siguiente
-              ? `Faltan ${Number(impacto.puntosParaSiguiente) || 0} pts para ${esc(siguiente.nombre)}`
+              ? `Faltan ${Number(impacto.puntosParaSiguiente) \vert{}\vert{} 0} pts para${esc(siguiente.nombre)}`
               : '¡Nivel máximo alcanzado!'
           }</span>
         </div>
@@ -176,7 +176,7 @@ export async function render(contenedor, ctx) {
   `;
 
   contenedor.querySelectorAll('[data-ir]').forEach((b) =>
-    b.addEventListener('click', () => window.location.hash=b.dataset.ir))
+    b.addEventListener('click', () => navegar(b.dataset.ir))
   );
   contenedor.querySelectorAll('[data-voluntariado]').forEach((b) =>
     b.addEventListener('click', () => navegar('/voluntariado'))
@@ -244,4 +244,4 @@ export async function render(contenedor, ctx) {
       contenedor.querySelector('#mis-publicaciones')?.scrollIntoView({ block: 'start' });
     });
   }
-} 
+}
