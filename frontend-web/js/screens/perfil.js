@@ -118,7 +118,7 @@ export async function render(contenedor, ctx) {
           <span>${progreso}% del nivel</span>
           <span>${
             siguiente
-              ? `Faltan ${Number(impacto.puntosParaSiguiente) \vert{}\vert{} 0} pts para${esc(siguiente.nombre)}`
+              ? `Faltan ${Number(impacto.puntosParaSiguiente) || 0} pts para${esc(siguiente.nombre)}`
               : '¡Nivel máximo alcanzado!'
           }</span>
         </div>
