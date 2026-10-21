@@ -244,4 +244,4 @@ export async function render(contenedor, ctx) {
       contenedor.querySelector('#mis-publicaciones')?.scrollIntoView({ block: 'start' });
     });
   }
-}
+} 
