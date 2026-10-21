@@ -1,4 +1,4 @@
-let cargandoPerfil=false;\n/* Mi perfil: datos personales, estadísticas, impacto comunitario, insignias,
+let cargandoPerfil=false;/* Mi perfil: datos personales, estadísticas, impacto comunitario, insignias,
    accesos rápidos y mis publicaciones. */
 
 import { Store } from '../store.js';
