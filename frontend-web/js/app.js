@@ -495,7 +495,7 @@ async function registrarServiceWorker() {
 function conectarEventos() {
   document.addEventListener('switch:sesion', () => {
     actualizarShell();
-    refrescarRuta();
+    // Se elimina refrescarRuta() de aquí para prevenir el bucle infinito de recargas
   });
   document.addEventListener('switch:admin', () => {
     actualizarShell();
