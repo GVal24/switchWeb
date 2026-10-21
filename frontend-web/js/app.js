@@ -357,7 +357,7 @@ function registrarRutas() {
     titulo: 'Catálogo P2P',
     volver: false,
   });
-  definirRuta('/perfil', () => import('./screens/perfil.js'), {
+  definirRuta('/perfil', () => import('./screens/perfil-clean.js'), {
     seccion: '/perfil',
     titulo: 'Mi perfil',
     volver: false,
