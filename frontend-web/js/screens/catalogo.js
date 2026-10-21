@@ -16,7 +16,7 @@ import {
   esfuerzo,
   imagenPublicacion,
   idPublicacion,
-  getIdOferente,
+  idOferente,
   nombreOferente,
   fecha,
   debounce,
@@ -246,7 +246,7 @@ export async function render(contenedor) {
     const el = contenedor.querySelector('#cat-metricas');
     if (!el) return;
     el.innerHTML = `
-      <span class="chip chip-verde">${icon('gift')} ${cantidad}${
+      <span class="chip chip-verde">${icon('gift')} ${cantidad} ${
       cantidad === 1 ? 'publicación' : 'publicaciones'
     }</span>
       <span class="chip">${icon('swap')} Trueques sin dinero</span>
@@ -259,10 +259,12 @@ export async function render(contenedor) {
     const tipo = String(pub.tipo_item || 'OBJETO').toUpperCase();
     const calif = Number(pub.oferente_calificacion);
     const resenas = Number(pub.oferente_resenas);
-    const uid = (typeof getIdOferente === 'function' ? getIdOferente(pub) : '') || pub.usuario_id || pub.oferente_id || pub.dueno_id || '';
+    const uid = idOferente(pub);
 
     return `
-      <a class="pub-card" href="#/detalle/${encodeURIComponent(id)}" aria-label="${esc(pub.titulo || 'Publicación')}, esfuerzo ${esc(nivel.etiqueta)}">
+      <a class="pub-card" href="#/detalle/${encodeURIComponent(id)}" aria-label="${esc(
+      pub.titulo || 'Publicación'
+    )}, esfuerzo ${esc(nivel.etiqueta)}">
         ${imagenPublicacion(pub, 'pub-imagen', 148)}
         <div class="pub-cuerpo">
           <span class="pub-titulo">${esc(pub.titulo || 'Publicación')}</span>
