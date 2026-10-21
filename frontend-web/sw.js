@@ -5,7 +5,7 @@
    - Estrategia: red primero para navegación; stale-while-revalidate para
      los archivos estáticos propios. */
 
-const VERSION = 'switch-v1.1.11';
+const VERSION = 'switch-v1.1.12';
 const CACHE_ESTATICO = `${VERSION}-estatico`;
 const CACHE_NAVEGACION = `${VERSION}-navegacion`;
 const SCOPE = new URL('./', self.location.href).pathname;
