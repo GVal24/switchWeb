@@ -20,15 +20,18 @@ import {
 import { navegar } from '../router.js';
 
 export async function render(contenedor, ctx) {
-
-
   contenedor.innerHTML = `<section class="pantalla">${spinner('Cargando tu perfil…')}</section>`;
 
   let perfil;
   try {
     perfil = await API.perfil();
-    Store.guardarSesion({ ...Store.usuario, ...perfil, token: Store.token });
-    document.dispatchEvent(new CustomEvent('switch:sesion'));
+    // Actualizamos los datos del usuario localmente sin disparar eventos globales para evitar el bucle
+    if (Store.usuario) {
+      Store.usuario = { ...Store.usuario, ...perfil };
+      try {
+        localStorage.setItem('switch_usuario', JSON.stringify(Store.usuario));
+      } catch (e) {}
+    }
   } catch (e) {
     contenedor.innerHTML = `<section class="pantalla">${errorEstado(
       e?.message || 'No pudimos cargar tu perfil.',
@@ -124,11 +127,7 @@ export async function render(contenedor, ctx) {
             insignias.length
               ? insignias
                   .map(
-                    (i) => `<span class="badge-insignia ${
-                      i.desbloqueada ? 'listo' : 'bloqueada'
-                    }" title="${esc(i.descripcion || '')}">${icon(
-                      i.desbloqueada ? 'star' : 'lock'
-                    )} ${esc(i.nombre)}</span>`
+                    (i) => `<span class="badge-insignia ${ i.desbloqueada ? 'listo' : 'bloqueada' }" title="${esc(i.descripcion || '')}">${icon( i.desbloqueada ? 'star' : 'lock' )} ${esc(i.nombre)}</span>`
                   )
                   .join('')
               : ''
@@ -214,20 +213,20 @@ export async function render(contenedor, ctx) {
 
     zona.innerHTML = `<div class="mis-pubs">
       ${publicaciones
-        .map(
-          (p) => `
-        <a class="mi-pub" href="#/detalle/${encodeURIComponent(idPublicacion(p))}" aria-label="Ver ${esc(
+        .map((p) => {
+          const pubId = typeof idPublicacion === 'function' ? idPublicacion(p) : (p.id || p._id);
+          return `
+        <a class="mi-pub" href="#/detalle/${encodeURIComponent(pubId)}" aria-label="Ver ${esc(
             p.titulo || 'publicación'
           )}">
           ${imagenPublicacion(p, 'pub-imagen', 52)}
           <div class="mi-pub-info">
             <p class="mi-pub-titulo">${esc(p.titulo || 'Publicación')}</p>
-            <div class="mi-pub-estado">${chipEsfuerzo(p.nivel_esfuerzo)}</div>
-            ${p.creado_en ? `<p class="texto-suave texto-chico">${esc(fecha(p.creado_en))}</p>` : ''}
+            <div class="mi-pub-estado">${chipEsfuerzo(p.nivel_esfuerzo)}</div>${p.creado_en ? `<p class="texto-suave texto-chico">${esc(fecha(p.creado_en))}</p>` : ''}
           </div>
           ${icon('chevron')}
-        </a>`
-        )
+        </a>`;
+        })
         .join('')}
     </div>`;
   } catch (e) {

@@ -16,6 +16,7 @@ import {
   esfuerzo,
   imagenPublicacion,
   idPublicacion,
+  getIdOferente,
   nombreOferente,
   fecha,
   debounce,
@@ -76,9 +77,7 @@ export async function render(contenedor) {
         <div class="chips-fila" role="group" aria-label="Filtrar por tipo">
           ${TIPOS.map(
             (t) =>
-              `<button type="button" class="chip-opcion chip-azul" data-tipo="${t.valor}" aria-pressed="${
-                t.valor === 'TODOS' ? 'true' : 'false'
-              }">${esc(t.texto)}</button>`
+              `<button type="button" class="chip-opcion chip-azul" data-tipo="${t.valor}" aria-pressed="${ t.valor === 'TODOS' ? 'true' : 'false' }">${esc(t.texto)}</button>`
           ).join('')}
         </div>
       </div>
@@ -88,9 +87,7 @@ export async function render(contenedor) {
       ${
         Store.sesionActiva
           ? `<div class="fab-contenedor">
-              <button type="button" class="fab" id="cat-publicar" ${
-                Store.suspendido ? 'disabled title="Tu cuenta está suspendida"' : ''
-              }>${icon('plus')} Publicar</button>
+              <button type="button" class="fab" id="cat-publicar" ${ Store.suspendido ? 'disabled title="Tu cuenta está suspendida"' : '' }>${icon('plus')} Publicar</button>
             </div>`
           : `<div class="card mt-1" style="text-align:center">
               <p class="negrita">¿Querés sumar lo tuyo?</p>
@@ -231,6 +228,17 @@ export async function render(contenedor) {
       publicaciones.length === 1 ? 'publicación activa' : 'publicaciones activas'
     }. Tocá una para ver el detalle.</p>
     `;
+
+    // Conectar eventos para abrir perfiles de usuarios desde la tarjeta
+    resultados.querySelectorAll('[data-ver-usuario]').forEach((btn) => {
+      btn.addEventListener('click', (ev) => {
+        ev.preventDefault();
+        ev.stopPropagation();
+        const uid = btn.dataset.verUsuario;
+        if (uid) navegar(`/usuario/${encodeURIComponent(uid)}`);
+      });
+    });
+
     anunciar(`Se muestran ${publicaciones.length} publicaciones.`);
   }
 
@@ -238,7 +246,7 @@ export async function render(contenedor) {
     const el = contenedor.querySelector('#cat-metricas');
     if (!el) return;
     el.innerHTML = `
-      <span class="chip chip-verde">${icon('gift')} ${cantidad} ${
+      <span class="chip chip-verde">${icon('gift')} ${cantidad}${
       cantidad === 1 ? 'publicación' : 'publicaciones'
     }</span>
       <span class="chip">${icon('swap')} Trueques sin dinero</span>
@@ -251,10 +259,10 @@ export async function render(contenedor) {
     const tipo = String(pub.tipo_item || 'OBJETO').toUpperCase();
     const calif = Number(pub.oferente_calificacion);
     const resenas = Number(pub.oferente_resenas);
+    const uid = (typeof getIdOferente === 'function' ? getIdOferente(pub) : '') || pub.usuario_id || pub.oferente_id || pub.dueno_id || '';
+
     return `
-      <a class="pub-card" href="#/detalle/${encodeURIComponent(id)}" aria-label="${esc(
-      pub.titulo || 'Publicación'
-    )}, esfuerzo ${esc(nivel.etiqueta)}">
+      <a class="pub-card" href="#/detalle/${encodeURIComponent(id)}" aria-label="${esc(pub.titulo || 'Publicación')}, esfuerzo ${esc(nivel.etiqueta)}">
         ${imagenPublicacion(pub, 'pub-imagen', 148)}
         <div class="pub-cuerpo">
           <span class="pub-titulo">${esc(pub.titulo || 'Publicación')}</span>
@@ -266,13 +274,13 @@ export async function render(contenedor) {
     }</span>
           </div>
           <div class="pub-pie">
-            <button type="button" class="pub-dueno" data-ver-usuario="${esc((pub.usuario_id || pub.oferente_id || ''))}" style="border:0;background:none;padding:0;text-align:left;cursor:pointer;">
+            <button type="button" class="pub-dueno" data-ver-usuario="${esc(uid)}" style="border:0;background:none;padding:0;text-align:left;cursor:pointer;">
               ${avatar(nombreOferente(pub))}
               <span>${esc(nombreOferente(pub))}</span>
             </button>
             ${
               Number.isFinite(calif) && resenas > 0
-                ? `<span class="chip" title="${esc(String(resenas))} reseñas">${icon('star')} ${calif.toFixed(1)}</span>`
+                ? `<span class="chip" title="${esc(String(resenas))} reseñas">${icon('star')}${calif.toFixed(1)}</span>`
                 : ''
             }
           </div>

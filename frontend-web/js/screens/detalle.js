@@ -59,7 +59,7 @@ export async function render(contenedor, ctx) {
     return;
   }
 
-  const duenoId = (pub.usuario_id || pub.oferente_id || pub.dueno_id || " );
+  const duenoId = pub.usuario_id || pub.oferente_id || pub.dueno_id || (typeof getIdOferente === 'function' ? getIdOferente(pub) : '') || '';
   const esMia =
     Store.sesionActiva && duenoId !== '' && Number(duenoId) === Number(Store.usuario?.id);
   const nivel = String(pub.nivel_esfuerzo || 'SIMPLE').toUpperCase();
@@ -86,7 +86,7 @@ export async function render(contenedor, ctx) {
         <span class="chip">${icon(tipo === 'SERVICIO' ? 'sparkles' : 'gift')} ${
     tipo === 'SERVICIO' ? 'Servicio' : 'Objeto'
   }</span>
-        ${pub.creado_en ? `<span class="chip">${icon('clock')} ${esc(fecha(pub.creado_en))}</span>` : ''}
+        ${pub.creado_en ? `<span class="chip">${icon('clock')}${esc(fecha(pub.creado_en))}</span>` : ''}
       </div>
 
       <div class="detalle-sec">
@@ -115,7 +115,7 @@ export async function render(contenedor, ctx) {
         <div class="dueno-fila">
           ${avatar(dueno, 'avatar-lg')}
           <div class="crece">
-            <button type="button" class="dueno-nombre" data-ver-usuario="${esc((pub.usuario_id || pub.oferente_id || pub.dueno_id || " ))}" style="border:0;background:none;padding:0;text-align:left;cursor:pointer;color:inherit;font-weight:inherit;">
+            <button type="button" class="dueno-nombre" data-ver-usuario="${esc(duenoId)}" style="border:0;background:none;padding:0;text-align:left;cursor:pointer;color:inherit;font-weight:inherit;">
               ${esc(dueno)}${esMia ? ' (vos)' : ''}
             </button>
             <div class="dueno-meta">
@@ -146,8 +146,7 @@ export async function render(contenedor, ctx) {
 
   contenedor.querySelector('[data-ver-usuario]')?.addEventListener('click', (e) => {
     e.stopPropagation();
-    const uid = (pub.usuario_id || pub.oferente_id || pub.dueno_id || " );
-    if (uid) navegar(`/usuario/${encodeURIComponent(uid)}`);
+    if (duenoId) navegar(`/usuario/${encodeURIComponent(duenoId)}`);
   });
 
   if (esMia) {
@@ -235,7 +234,7 @@ export async function render(contenedor, ctx) {
               )}">
               <div class="crece">
                 <p class="titulo">${esc(m.titulo || 'Publicación')}</p>
-                <p class="sub">${esc(esfuerzo(m.nivel_esfuerzo).etiqueta)} · ${
+                <p class="sub">${esc(esfuerzo(m.nivel_esfuerzo).etiqueta)} ·${
                 String(m.tipo_item).toUpperCase() === 'SERVICIO' ? 'Servicio' : 'Objeto'
               }</p>
               </div>
