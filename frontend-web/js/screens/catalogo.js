@@ -234,8 +234,10 @@ export async function render(contenedor) {
       btn.addEventListener('click', (ev) => {
         ev.preventDefault();
         ev.stopPropagation();
-        const uid = btn.dataset.verUsuario;
-        if (uid) navegar(`/usuario/${encodeURIComponent(uid)}`);
+        const uid = btn.dataset.verUsuario || btn.getAttribute('data-ver-usuario');
+        if (uid && uid !== 'undefined' && uid !== 'null') {
+          window.location.hash = `#/usuario/${encodeURIComponent(uid)}`;
+        }
       });
     });
 

@@ -176,7 +176,7 @@ export async function render(contenedor, ctx) {
   `;
 
   contenedor.querySelectorAll('[data-ir]').forEach((b) =>
-    b.addEventListener('click', () => navegar(b.dataset.ir))
+    b.addEventListener('click', () => window.location.hash=b.dataset.ir))
   );
   contenedor.querySelectorAll('[data-voluntariado]').forEach((b) =>
     b.addEventListener('click', () => navegar('/voluntariado'))
