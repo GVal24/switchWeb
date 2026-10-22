@@ -358,6 +358,7 @@ function registrarRutas() {
     volver: false,
   });
   definirRuta('/perfil', () => import('./screens/perfil.js'), {
+    requiereSesion: true,
     seccion: '/perfil',
     titulo: 'Mi perfil',
     subtitulo: 'Impacto y reputación',
