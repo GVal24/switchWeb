@@ -16,7 +16,7 @@ import {
   esfuerzo,
   imagenPublicacion,
   idPublicacion,
-  getIdOferenteX,
+  idOferente,
   nombreOferente,
   fecha,
   debounce,
