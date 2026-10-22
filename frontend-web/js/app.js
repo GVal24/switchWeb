@@ -541,4 +541,4 @@ window.__switchCerrarAdmin = cerrarAdmin;
 window.__switchPedirAdmin = pedirAdmin;
 window.__switchActualizarShell = actualizarShell;
 
-iniciar();
+iniciar();\n
