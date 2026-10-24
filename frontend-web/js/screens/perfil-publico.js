@@ -1,5 +1,6 @@
-/* Mi perfil: datos personales, estadísticas, impacto comunitario, insignias,
-   accesos rápidos y mis publicaciones. */
+/* Perfil público de otro vecino: datos no sensibles, estadísticas, impacto
+   comunitario, insignias y sus publicaciones. Los accesos rápidos son
+   personales, así que sólo se muestran con sesión iniciada. */
 
 import { Store } from '../store.js';
 import { API } from '../api.js';
@@ -15,22 +16,28 @@ import {
   chipEsfuerzo,
   imagenPublicacion,
   idPublicacion,
+  idOferente,
   fecha,
 } from '../ui.js';
 import { navegar } from '../router.js';
 
 export async function render(contenedor, ctx) {
   const id = ctx.params.id;
+
+  // Si es mi propio perfil, conviene la pantalla completa (con mis datos).
+  if (Store.usuario && String(Store.usuario.id) === String(id)) {
+    navegar('/perfil', { reemplazar: true });
+    return;
+  }
+
   contenedor.innerHTML = `<section class="pantalla">${spinner('Cargando perfil…')}</section>`;
 
   let perfil;
   try {
     perfil = await API.perfilPublico(id);
-    Store.guardarSesion({ ...Store.usuario, ...perfil, token: Store.token });
-    document.dispatchEvent(new CustomEvent('switch:sesion'));
   } catch (e) {
     contenedor.innerHTML = `<section class="pantalla">${errorEstado(
-      e?.message || 'No pudimos cargar tu perfil.',
+      e?.message || 'No pudimos cargar este perfil.',
       '<button type="button" class="btn btn-secundario" data-reintentar>Reintentar</button>'
     )}</section>`;
     contenedor.querySelector('[data-reintentar]')?.addEventListener('click', () =>
@@ -49,7 +56,7 @@ export async function render(contenedor, ctx) {
   const nombre = [perfil.nombre, perfil.apellido].filter(Boolean).join(' ') || 'Vecino de Switch';
   const calificacion = Number(stats.calificacionPromedio) || 0;
   const resenas = Number(stats.cantidadResenas) || 0;
-  const suspendido = Store.suspendido;
+  const conSesion = Store.sesionActiva;
 
   contenedor.innerHTML = `
     <section class="pantalla pantalla-perfil">
@@ -60,29 +67,9 @@ export async function render(contenedor, ctx) {
     perfil.miembro_desde || '—'
   )}</p>
         <div class="fila" style="justify-content:center;gap:0.35rem;margin-top:0.45rem">
-          <span class="chip chip-verde">${icon('checkcircle')} ${
-    perfil.validado_mayor_edad ? 'Mayoría de edad validada' : 'Cuenta verificada'
-  }</span>
-          ${suspendido ? `<span class="chip estado-rechazada">${icon('alert')} Suspendida</span>` : ''}
+          <span class="chip chip-verde">${icon('checkcircle')} Cuenta verificada</span>
         </div>
       </header>
-
-      ${
-        suspendido
-          ? `<div class="banner banner-peligro">
-              ${icon('alert')}
-              <div><strong>Tu cuenta está suspendida</strong><p>${
-                esc(
-                  perfil.avisoSuspension ||
-                    Store.usuario?.avisoSuspension ||
-                    'Podés consultar la plataforma, pero no publicar, proponer trueques ni escribir por chat.'
-                )
-              }</p>
-              <button type="button" class="btn btn-secundario btn-sm mt-1" data-voluntariado>Ir a voluntariado</button>
-              </div>
-            </div>`
-          : ''
-      }
 
       <div class="perfil-stats">
         <div class="stat-card">
@@ -105,7 +92,7 @@ export async function render(contenedor, ctx) {
       <div class="nivel-card">
         <div class="nivel-cab">
           ${icon('trophy')}
-          <h3>Mi impacto comunitario</h3>
+          <h3>Impacto comunitario</h3>
           <span class="nivel-puntos">${Number(impacto.puntos) || 0} pts</span>
         </div>
         <p class="nivel-nombre">Nivel ${Number(nivel.numero) || 1}: ${esc(nivel.nombre || 'Semilla')}</p>
@@ -138,51 +125,61 @@ export async function render(contenedor, ctx) {
   } insignias desbloqueadas · Se ganan con trueques, voluntariado y buena reputación.</p>
       </div>
 
-      <div class="seccion-cabecera mt-2">
-        <h2>Accesos rápidos</h2>
-      </div>
-      <div class="menu-lista">
-        <button type="button" class="menu-fila" data-ir="/publicar">
-          ${icon('plus')}<span>Publicar algo</span>${icon('chevron', 'chevron')}
-        </button>
-        <button type="button" class="menu-fila" data-ir="/trueques">
-          ${icon('swap')}<span>Mis trueques</span>${icon('chevron', 'chevron')}
-        </button>
-        <button type="button" class="menu-fila" data-ir="/voluntariado">
-          ${icon('heart')}<span>Voluntariado e instituciones</span>${icon('chevron', 'chevron')}
-        </button>
-        <button type="button" class="menu-fila" data-ir="/qr">
-          ${icon('qr')}<span>Escanear QR de presencia</span>${icon('chevron', 'chevron')}
-        </button>
-        <button type="button" class="menu-fila" data-ir="/accesibilidad">
-          ${icon('accessibility')}<span>Accesibilidad y lectura</span>${icon('chevron', 'chevron')}
-        </button>
-        ${
-          Store.esAdmin
-            ? `<button type="button" class="menu-fila" data-ir="/admin">${icon('shield')}<span>Panel de administración</span>${icon('chevron', 'chevron')}</button>`
-            : ''
-        }
-        <button type="button" class="menu-fila peligro" data-salir>
-          ${icon('logout')}<span>Cerrar sesión</span>
-        </button>
-      </div>
+      ${
+        conSesion
+          ? `<div class="acciones-detalle mt-2">
+              <button type="button" class="btn btn-primario btn-block" data-mensaje>
+                ${icon('message')} Enviar un mensaje
+              </button>
+            </div>
 
-      <div class="seccion-cabecera mt-2" id="mis-publicaciones">
-        <h2>Mis publicaciones</h2>
-        <button type="button" class="btn-sm btn btn-secundario" data-ir="/publicar">${icon('plus')} Nueva</button>
+            <div class="seccion-cabecera mt-2">
+              <h2>Accesos rápidos</h2>
+            </div>
+            <div class="menu-lista">
+              <button type="button" class="menu-fila" data-ir="/publicar">
+                ${icon('plus')}<span>Publicar algo</span>${icon('chevron', 'chevron')}
+              </button>
+              <button type="button" class="menu-fila" data-ir="/trueques">
+                ${icon('swap')}<span>Mis trueques</span>${icon('chevron', 'chevron')}
+              </button>
+              <button type="button" class="menu-fila" data-ir="/voluntariado">
+                ${icon('heart')}<span>Voluntariado e instituciones</span>${icon('chevron', 'chevron')}
+              </button>
+              <button type="button" class="menu-fila" data-ir="/qr">
+                ${icon('qr')}<span>Escanear QR de presencia</span>${icon('chevron', 'chevron')}
+              </button>
+              <button type="button" class="menu-fila" data-ir="/accesibilidad">
+                ${icon('accessibility')}<span>Accesibilidad y lectura</span>${icon('chevron', 'chevron')}
+              </button>
+              ${
+                Store.esAdmin
+                  ? `<button type="button" class="menu-fila" data-ir="/admin">${icon('shield')}<span>Panel de administración</span>${icon('chevron', 'chevron')}</button>`
+                  : ''
+              }
+              <button type="button" class="menu-fila peligro" data-salir>
+                ${icon('logout')}<span>Cerrar sesión</span>
+              </button>
+            </div>`
+          : ''
+      }
+
+      <div class="seccion-cabecera mt-2" id="publicaciones-usuario">
+        <h2>Publicaciones de ${esc(perfil.nombre || 'este vecino')}</h2>
       </div>
-      <div id="mis-pubs-zona" aria-live="polite">${spinner('Cargando tus publicaciones…')}</div>
+      <div id="pubs-zona" aria-live="polite">${spinner('Cargando publicaciones…')}</div>
     </section>
   `;
 
   contenedor.querySelectorAll('[data-ir]').forEach((b) =>
     b.addEventListener('click', () => navegar(b.dataset.ir))
   );
-  contenedor.querySelectorAll('[data-voluntariado]').forEach((b) =>
-    b.addEventListener('click', () => navegar('/voluntariado'))
+
+  contenedor.querySelector('[data-mensaje]')?.addEventListener('click', () =>
+    navegar(`/chat/${encodeURIComponent(id)}?nombre=${encodeURIComponent(nombre)}`)
   );
 
-  contenedor.querySelector('[data-salir]').addEventListener('click', async () => {
+  contenedor.querySelector('[data-salir]')?.addEventListener('click', async () => {
     const ok = await confirmar({
       titulo: 'Cerrar sesión',
       texto: '¿Querés salir de tu cuenta en este dispositivo?',
@@ -196,18 +193,18 @@ export async function render(contenedor, ctx) {
     navegar('/voluntariado', { reemplazar: true });
   });
 
-  const zona = contenedor.querySelector('#mis-pubs-zona');
+  const zona = contenedor.querySelector('#pubs-zona');
 
   try {
-    const publicaciones = await API.misPublicaciones();
+    const todas = await API.catalogo();
+    const publicaciones = todas.filter((p) => String(idOferente(p)) === String(id));
+
     if (!publicaciones.length) {
       zona.innerHTML = vacio(
         'gift',
-        'Todavía no tenés publicaciones activas',
-        'Publicá algo que ya no uses o un servicio que puedas ofrecer. Aparecerá acá y en el catálogo cuando lo aprueben.',
-        '<button type="button" class="btn btn-primario" data-publicar>Publicar mi primera cosa</button>'
+        'Sin publicaciones activas',
+        'Cuando publique algo que ya no use o un servicio que pueda ofrecer, va a aparecer acá.'
       );
-      zona.querySelector('[data-publicar]')?.addEventListener('click', () => navegar('/publicar'));
       return;
     }
 
@@ -231,17 +228,11 @@ export async function render(contenedor, ctx) {
     </div>`;
   } catch (e) {
     zona.innerHTML = errorEstado(
-      e?.message || 'No pudimos cargar tus publicaciones.',
+      e?.message || 'No pudimos cargar las publicaciones.',
       '<button type="button" class="btn btn-secundario" data-reintentar-pubs>Reintentar</button>'
     );
     zona.querySelector('[data-reintentar-pubs]')?.addEventListener('click', () =>
       render(contenedor, ctx)
     );
-  }
-
-  if (ctx.query.get('tab') === 'publicaciones') {
-    requestAnimationFrame(() => {
-      contenedor.querySelector('#mis-publicaciones')?.scrollIntoView({ block: 'start' });
-    });
   }
 }
