@@ -373,7 +373,7 @@ class UsuarioModel {
     );
     return result.rows[0] || null;
   }
-}
+
 
   /**
    * Solicita un restablecimiento de contraseña.
