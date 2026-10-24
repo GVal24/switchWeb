@@ -129,6 +129,24 @@ export const API = {
     return datos(res);
   },
 
+  async solicitarResetPassword({ dni }) {
+    const res = await pedir('/auth/password-reset', {
+      metodo: 'POST',
+      auth: false,
+      body: { dni },
+    });
+    return datos(res);
+  },
+
+  async confirmarResetPassword({ token, nuevaPassword }) {
+    const res = await pedir('/auth/password-reset/confirm', {
+      metodo: 'POST',
+      auth: false,
+      body: { token, nuevaPassword },
+    });
+    return datos(res);
+  },
+
   async registro(payload) {
     const res = await pedir('/auth/registro', {
       metodo: 'POST',

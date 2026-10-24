@@ -29,6 +29,10 @@ router.post('/auth/otp/verificar', otpController.verificarCodigo);
 router.post('/auth/registro', authController.registrarUsuario);
 router.post('/auth/login', authController.loginUsuario);
 
+// Rutas de Restablecimiento de Contraseña (públicas)
+router.post('/auth/password-reset', authController.solicitarResetPassword);
+router.post('/auth/password-reset/confirm', authController.confirmarResetPassword);
+
 // Rutas de Instituciones y Cupos de Necesidad (lectura pública)
 router.get('/instituciones', instController.listarInstituciones);
 router.get('/instituciones/:institucionId/cupos', instController.obtenerCuposAbiertos);

@@ -64,6 +64,8 @@ export async function render(contenedor, ctx) {
           <button type="button" data-ver="privacidad">Política de Privacidad</button>
           <br>
           ¿Problemas para ingresar? <button type="button" data-ir-contacto>Escribinos</button>
+          <br>
+          ¿Olvidaste tu contraseña? <button type="button" data-ir-reset>Recuperarla</button>
         </p>
       </div>
 
@@ -99,6 +101,21 @@ export async function render(contenedor, ctx) {
 
   contenedor.querySelector('[data-ir-registro]').addEventListener('click', () => navegar('/registro'));
   contenedor.querySelector('[data-ir-contacto]').addEventListener('click', () => navegar('/contacto'));
+  contenedor.querySelector('[data-ir-reset]').addEventListener('click', async () => {
+    const dni = prompt('Ingresá tu DNI para solicitar el restablecimiento de contraseña:');
+    if (!dni) return;
+    const dniLimpio = dni.replace(/\D/g, '');
+    if (dniLimpio.length !== 8) {
+      toast('Por favor ingresá un DNI válido (8 dígitos).', 'aviso');
+      return;
+    }
+    try {
+      const respuesta = await API.solicitarResetPassword({ dni: dniLimpio });
+      toast(respuesta.mensaje || 'Se envió un enlace de restablecimiento.', 'exito');
+    } catch (e) {
+      toast(e?.message || 'No pudimos procesar la solicitud. Probá de nuevo.', 'error');
+    }
+  });
   contenedor.querySelectorAll('[data-ver]').forEach((b) =>
     b.addEventListener('click', () => verLegal(b.dataset.ver))
   );

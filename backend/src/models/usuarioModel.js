@@ -375,4 +375,36 @@ class UsuarioModel {
   }
 }
 
+  /**
+   * Solicita un restablecimiento de contraseña.
+   * Genera un token único, lo guarda en la base de datos y lo devuelve al solicitante.
+   * El token vence en 1 hora.
+   */
+  static async solicitarReset(dni) {
+    const query = `      UPDATE usuarios      SET        password_reset_token = $1,        password_reset_expires = $2      WHERE dni = $3      RETURNING id, dni, nombre, apellido;    `;
+    const token = require('crypto').randomBytes(32).toString('hex');
+    const expires = new Date(Date.now() + 3600000); // 1 hora
+    const result = await db.query(query, [token, expires, dni]);
+    if (result.rows[0]) return { token, expires, usuario: result.rows[0] };
+    return null;
+  }
+
+  /***
+   * Confirma un restablecimiento de contraseña usando un token válido.
+   * Hashea la nueva contraseña, la guarda en la BD y limpia los campos de reset.
+   */
+  static async confirmarReset(token, nuevaPassword) {
+    if (!token || !nuevaPassword || nuevaPassword.length < 6) {
+      throw new Error('Token o contraseña inválidos.');
+    }
+    const query = `      UPDATE usuarios      SET        password = $1,        password_reset_token = NULL,        password_reset_expires = NULL      WHERE password_reset_token = $2      RETURNING id, dni, nombre, apellido;    `;
+    const { hash } = require('bcrypt');
+    const hashedPassword = await hash(nuevaPassword, 10);
+    const result = await db.query(query, [hashedPassword, token]);
+    if (!result.rows[0]) {
+      throw new Error('Token inválido o expirado.');
+    }
+    return result.rows[0];
+  }
+} 
 module.exports = UsuarioModel;
