@@ -19,6 +19,8 @@ CREATE TABLE usuarios (
     activo BOOLEAN NOT NULL DEFAULT TRUE,      -- false => bloqueo permanente por administración
     suspendido_hasta TIMESTAMP NULL,           -- fecha de fin de suspensión temporal (NULL = sin suspensión)
     motivo_suspension TEXT NULL,               -- por qué se suspendió (ej. hallazgo de posible imagen de menor)
+    password_reset_token VARCHAR(100),         -- token para restablecimiento de contraseña (NULL = no hay solicitud pendiente)
+    password_reset_expires TIMESTAMP,          -- cuándo vence el token (NULL = sin vencimiento)
     creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT chk_rol CHECK (rol IN ('VECINO', 'DELEGADO', 'ADMIN'))

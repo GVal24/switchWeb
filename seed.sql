@@ -5,9 +5,15 @@
 -- CUIDADO: este archivo empieza con TRUNCATE. Borra lo que haya en la base,
 -- así que no lo corras sobre una base con datos que quieras conservar.
 --
--- Contraseñas de prueba:
+-- Contraseñas de prueba (hash bcrypt, longitud mínima 6 caracteres):
 --   - Usuarios VECINO/DELEGADO => clave123
 --   - Usuario ADMIN            => Switch2024!
+-- 
+-- Restablecimiento de contraseña (campos añadidos en schema.sql):
+--   - password_reset_token: token único generado para reset (vence en 1 hora)
+--   - password_reset_expires: fecha/hora de vencimiento del token
+--   - Si un usuario solicita reset, estos campos se llenan y el frontend
+--     muestra un enlace para establecer nueva contraseña.
 -- ============================================================
 
 TRUNCATE TABLE
