@@ -267,7 +267,7 @@
   cursor: pointer;
   text-align: center;
   text-decoration: none;
-  transition: transform 0.15s, filter 0.15s, background 0.15s, box-shadow 0.15s;
+  transition: transform var(--anim-speed), filter var(--anim-speed), background var(--anim-speed), box-shadow var(--anim-speed);
 }
 
 .btn .icono {

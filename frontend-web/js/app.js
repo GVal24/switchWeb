@@ -82,6 +82,7 @@ function construirBarra() {
     </button>
     <div class="appbar-acciones">
       <button type="button" class="icon-btn" id="btn-ayuda" aria-label="Escribinos" title="Escribinos">${icon('mail')}</button>
+      <button type="button" class="icon-btn" id="btn-tema" aria-label="Cambiar tema" title="Cambiar tema">${icon('sun')}</button>
       <button type="button" class="icon-btn" id="btn-a11y" aria-label="Opciones de accesibilidad" title="Accesibilidad">${icon('accessibility')}</button>
     </div>
   `;
@@ -99,6 +100,16 @@ function construirBarra() {
   appbar.querySelector('#btn-marca').addEventListener('click', () => navegar('/voluntariado'));
   appbar.querySelector('#btn-ayuda').addEventListener('click', () => navegar('/contacto'));
   appbar.querySelector('#btn-a11y').addEventListener('click', () => navegar('/accesibilidad'));
+  appbar.querySelector('#btn-tema').addEventListener('click', () => {
+    const html = document.documentElement;
+    const paletaActual = html.getAttribute('data-paleta');
+    if (paletaActual === 'suave') {
+      html.setAttribute('data-paleta', 'estandar');
+    } else {
+      html.setAttribute('data-paleta', 'suave');
+    }
+    Store.guardarAccesibilidad({ paletaSuave: html.getAttribute('data-paleta') === 'suave' });
+  });
 }
 
 function construirNavegacion() {

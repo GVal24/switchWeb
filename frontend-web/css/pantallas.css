@@ -305,7 +305,7 @@
   overflow: hidden;
   text-decoration: none;
   color: var(--texto);
-  transition: transform 0.16s, border-color 0.16s, box-shadow 0.16s;
+  transition: transform var(--anim-speed), border-color var(--anim-speed), box-shadow var(--anim-speed);
   min-width: 0;
 }
 

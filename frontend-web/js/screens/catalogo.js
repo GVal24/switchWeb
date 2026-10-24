@@ -267,10 +267,27 @@ export async function render(contenedor) {
     const resenas = Number(pub.oferente_resenas);
     const uid = idOferente(pub);
 
+    // Obtenemos la fecha de membresía de forma segura
+    // Consultamos el perfil público pero usando el ID del ofertante
+    // El backend ahora valida la propiedad, así que si no hay sesión,
+    // retornará datos masked (por seguridad)
+    let fechaMiembro = '';
+    if (Store.sesionActiva) {
+      try {
+        const perfil = await API.perfilPublico(uid);
+        fechaMiembro = perfil.miembro_desde ? `Vecino desde ${esc(fecha(perfil.miembro_desde))}` : 'Vecino';
+      } catch (e) {
+        // Si falla (por seguridad), mostramos info básica
+        fechaMiembro = 'Vecino';
+      }
+    } else {
+      fechaMiembro = 'Vecino';
+    }
+
     return `
       <a class="pub-card" href="#/detalle/${encodeURIComponent(id)}" aria-label="${esc(
       pub.titulo || 'Publicación'
-    )}, esfuerzo ${esc(nivel.etiqueta)}">
+    }}, esfuerzo ${esc(nivel.etiqueta)}">
         ${imagenPublicacion(pub, 'pub-imagen', 148)}
         <div class="pub-cuerpo">
           <span class="pub-titulo">${esc(pub.titulo || 'Publicación')}</span>
@@ -282,7 +299,8 @@ export async function render(contenedor) {
     }</span>
           </div>
           <div class="pub-pie">
-            <button type="button" class="pub-dueno" data-ver-usuario="${esc(uid)}" style="border:0;background:none;padding:0;text-align:left;cursor:pointer;">
+            <button type="button" class="pub-dueno" data-ver-usuario="${esc(uid)}" style="border:0;background:none;padding:0;text-align:left;cursor:pointer;" 
+                    title="Ver perfil de ${esc(nombreOferente(pub))}">
               ${avatar(nombreOferente(pub))}
               <span>${esc(nombreOferente(pub))}</span>
             </button>
@@ -291,8 +309,8 @@ export async function render(contenedor) {
                 ? `<span class="chip" title="${esc(String(resenas))} reseñas">${icon('star')}${calif.toFixed(1)}</span>`
                 : ''
             }
+            ${fechaMiembro ? `<span class="texto-suave texto-chico">${fechaMiembro}</span>` : ''}
           </div>
-          ${pub.creado_en ? `<span class="texto-suave texto-chico">${esc(fecha(pub.creado_en))}</span>` : ''}
         </div>
       </a>
     `;

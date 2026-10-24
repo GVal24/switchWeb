@@ -28,6 +28,8 @@
   --foco: #60a5fa;
   --texto-sobre-acento: #04150f;
 
+  --anim-speed: 0.2s;
+
   --sombra: 0 14px 34px rgba(0, 0, 0, 0.32);
   --sombra-suave: 0 6px 18px rgba(0, 0, 0, 0.22);
 
@@ -165,7 +167,7 @@ html[data-paleta="contraste"] .isotipo {
 
 /* ---------- Paleta 4: Suave y calma (baja estimulación) ---------- */
 html[data-paleta="suave"] {
-  --fondo: #f6f3ee;
+  --fondo: #f8f6f2;
   --fondo-2: #efeae2;
   --tarjeta: #ffffff;
   --tarjeta-2: #fbf9f5;
