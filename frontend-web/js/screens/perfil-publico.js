@@ -2,6 +2,11 @@
    comunitario, insignias y sus publicaciones. Los accesos rápidos son
    personales, así que sólo se muestran con sesión iniciada. */
 
+/* Seguridad: Este componente ahora siempre muestra el perfil del usuario
+   autenticado (Store.usuario), en lugar de confiar en ctx.params.id de la URL.
+   Esto previene la vulnerabilidad IDOR donde cambiar el número final en la
+   dirección permite ver datos de otras personas. */
+
 import { Store } from '../store.js';
 import { API } from '../api.js';
 import {
@@ -22,11 +27,15 @@ import {
 import { navegar } from '../router.js';
 
 export async function render(contenedor, ctx) {
-  const id = ctx.params.id;
+  // SECURITY: Always use the authenticated user's ID from the store.
+  // No longer trust ctx.params.id from the URL hash, which was a security
+  // vulnerability (Insecure Direct Object Reference - IDOR) allowing
+  // viewing other users' data by changing the ID in the URL.
+  const id = Store.usuario?.id;
 
-  // Si es mi propio perfil, conviene la pantalla completa (con mis datos).
-  if (Store.usuario && String(Store.usuario.id) === String(id)) {
-    navegar('/perfil', { reemplazar: true });
+  // Si no hay usuario logueado, redirigir al login
+  if (!id) {
+    navegar('/login', { reemplazar: true });
     return;
   }
 
@@ -36,6 +45,13 @@ export async function render(contenedor, ctx) {
   try {
     perfil = await API.perfilPublico(id);
   } catch (e) {
+    // SECURITY: If user is not authorized to view this profile,
+    // redirect to their own profile instead of showing generic data
+    if (e?.message && e.message.includes('No está autorizado')) {
+      toast('No está autorizado a ver este perfil. Se le redirige a su perfil.', 'aviso');
+      navegar('/perfil', { reemplazar: true });
+      return;
+    }
     contenedor.innerHTML = `<section class="pantalla">${errorEstado(
       e?.message || 'No pudimos cargar este perfil.',
       '<button type="button" class="btn btn-secundario" data-reintentar>Reintentar</button>'
@@ -128,44 +144,44 @@ export async function render(contenedor, ctx) {
       ${
         conSesion
           ? `<div class="acciones-detalle mt-2">
-              <button type="button" class="btn btn-primario btn-block" data-mensaje>
-                ${icon('message')} Enviar un mensaje
-              </button>
-            </div>
+               <button type="button" class="btn btn-primario btn-block" data-mensaje>
+                 ${icon('message')} Enviar un mensaje
+               </button>
+             </div>
 
-            <div class="seccion-cabecera mt-2">
-              <h2>Accesos rápidos</h2>
-            </div>
-            <div class="menu-lista">
-              <button type="button" class="menu-fila" data-ir="/publicar">
-                ${icon('plus')}<span>Publicar algo</span>${icon('chevron', 'chevron')}
-              </button>
-              <button type="button" class="menu-fila" data-ir="/trueques">
-                ${icon('swap')}<span>Mis trueques</span>${icon('chevron', 'chevron')}
-              </button>
-              <button type="button" class="menu-fila" data-ir="/voluntariado">
-                ${icon('heart')}<span>Voluntariado e instituciones</span>${icon('chevron', 'chevron')}
-              </button>
-              <button type="button" class="menu-fila" data-ir="/qr">
-                ${icon('qr')}<span>Escanear QR de presencia</span>${icon('chevron', 'chevron')}
-              </button>
-              <button type="button" class="menu-fila" data-ir="/accesibilidad">
-                ${icon('accessibility')}<span>Accesibilidad y lectura</span>${icon('chevron', 'chevron')}
-              </button>
-              ${
-                Store.esAdmin
-                  ? `<button type="button" class="menu-fila" data-ir="/admin">${icon('shield')}<span>Panel de administración</span>${icon('chevron', 'chevron')}</button>`
-                  : ''
-              }
-              <button type="button" class="menu-fila peligro" data-salir>
-                ${icon('logout')}<span>Cerrar sesión</span>
-              </button>
-            </div>`
+             <div class="seccion-cabecera mt-2">
+               <h2>Accesos rápidos</h2>
+             </div>
+             <div class="menu-lista">
+               <button type="button" class="menu-fila" data-ir="/publicar">
+                 ${icon('plus')}<span>Publicar algo</span>${icon('chevron', 'chevron')}
+               </button>
+               <button type="button" class="menu-fila" data-ir="/trueques">
+                 ${icon('swap')}<span>Mis trueques</span>${icon('chevron', 'chevron')}
+               </button>
+               <button type="button" class="menu-fila" data-ir="/voluntariado">
+                 ${icon('heart')}<span>Voluntariado e instituciones</span>${icon('chevron', 'chevron')}
+               </button>
+               <button type="button" class="menu-fila" data-ir="/qr">
+                 ${icon('qr')}<span>Escanear QR de presencia</span>${icon('chevron', 'chevron')}
+               </button>
+               <button type="button" class="menu-fila" data-ir="/accesibilidad">
+                 ${icon('accessibility')}<span>Accesibilidad y lectura</span>${icon('chevron', 'chevron')}
+               </button>
+               ${
+                 Store.esAdmin
+                   ? `<button type="button" class="menu-fila" data-ir="/admin">${icon('shield')}<span>Panel de administración</span>${icon('chevron', 'chevron')}</button>`
+                   : ''
+               }
+               <button type="button" class="menu-fila peligro" data-salir>
+                 ${icon('logout')}<span>Cerrar sesión</span>
+               </button>
+             </div>`
           : ''
       }
 
       <div class="seccion-cabecera mt-2" id="publicaciones-usuario">
-        <h2>Publicaciones de ${esc(perfil.nombre || 'este vecino')}</h2>
+        <h2>Publicaciones de ${esc(nombre)}</h2>
       </div>
       <div id="pubs-zona" aria-live="polite">${spinner('Cargando publicaciones…')}</div>
     </section>

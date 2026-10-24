@@ -234,9 +234,13 @@ export async function render(contenedor) {
       btn.addEventListener('click', (ev) => {
         ev.preventDefault();
         ev.stopPropagation();
-        const uid = btn.dataset.verUsuario || btn.getAttribute('data-ver-usuario');
-        if (uid && uid !== 'undefined' && uid !== 'null') {
-          window.location.hash = `#/usuario/${encodeURIComponent(uid)}`;
+        // SECURITY: Navigate to own profile instead of exposing user ID in URL hash.
+        // Prevents IDOR (Insecure Direct Object Reference) where changing the
+        // final number in the URL allows viewing other people's data.
+        if (Store.sesionActiva) {
+          navegar('/perfil', { reemplazar: true });
+        } else {
+          navegar('/login?volver=/catalogo');
         }
       });
     });

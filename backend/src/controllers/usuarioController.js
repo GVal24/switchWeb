@@ -22,10 +22,23 @@ const obtenerMiPerfil = asyncWrapper(async (req, res) => {
 
 const obtenerPerfilPublico = asyncWrapper(async (req, res) => {
   const { id } = req.params;
+
+  // Require authentication: only logged-in users can view public profiles
+  if (!req.usuario) {
+    throw new Error('Necesitás iniciar sesión para ver perfiles públicos.');
+  }
+
   const perfil = await UsuarioModel.obtenerPerfilPublico(id);
 
   if (!perfil) {
     throw new NotFoundError('No se encontró el perfil del usuario.');
+  }
+
+  // SECURITY: Only allow the authenticated user to view their OWN profile.
+  // Prevent IDOR (Insecure Direct Object Reference) by verifying ownership.
+  if (String(perfil.id) !== String(req.usuario.id)) {
+    // Return unauthorized error instead of generic data
+    throw new Error('No está autorizado a ver este perfil. Redirigiendo a su perfil...');
   }
 
   res.status(200).json({
