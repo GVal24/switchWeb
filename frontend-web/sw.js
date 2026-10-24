@@ -5,7 +5,7 @@
    - Estrategia: red primero para navegación; stale-while-revalidate para
      los archivos estáticos propios. */
 
-const VERSION = 'switch-v1.1.16';
+const VERSION = 'switch-v1.1.17';
 const CACHE_ESTATICO = `${VERSION}-estatico`;
 const CACHE_NAVEGACION = `${VERSION}-navegacion`;
 const SCOPE = new URL('./', self.location.href).pathname;
@@ -31,6 +31,7 @@ const ARMAZON = [
   './js/screens/trueques.js',
   './js/screens/chat.js',
   './js/screens/perfil.js',
+  './js/screens/perfil-publico.js',
   './js/screens/voluntariado.js',
   './js/screens/qr.js',
   './js/screens/contacto.js',

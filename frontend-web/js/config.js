@@ -18,11 +18,11 @@
   var mismaRuta = location.origin + '/api';
   var desarrollo = 'http://' + (host === '' ? 'localhost' : host) + ':' + PUERTO_API + '/api';
 
-  var porDefecto = mismoOrigen ? mismaRuta : desarrollo;
-
-  if (!mismoOrigen && window.SWITCH_API_URL) {
-    porDefecto = String(window.SWITCH_API_URL);
-  }
+  var porDefecto = window.SWITCH_API_URL
+    ? String(window.SWITCH_API_URL)
+    : mismoOrigen
+      ? mismaRuta
+      : desarrollo;
 
   var guardada = null;
   try { guardada = localStorage.getItem('switch_api_base'); } catch (e) {}

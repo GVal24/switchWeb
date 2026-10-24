@@ -56,7 +56,7 @@ export async function render(contenedor, ctx) {
       <header class="perfil-cabecera">
         ${avatar(nombre, 'avatar-xl perfil-avatar')}
         <h1 class="perfil-nombre">${esc(nombre)}</h1>
-        <p class="perfil-id">DNI ${esc(perfil.dni || '—')} · Miembro desde ${esc(
+        <p class="perfil-id">${perfil.dni ? `DNI ${esc(perfil.dni)} · ` : ''}Miembro desde ${esc(
     perfil.miembro_desde || '—'
   )}</p>
         <div class="fila" style="justify-content:center;gap:0.35rem;margin-top:0.45rem">

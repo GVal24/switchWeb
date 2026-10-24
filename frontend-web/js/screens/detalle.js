@@ -17,12 +17,12 @@ import {
   esfuerzo,
   imagenPublicacion,
   idPublicacion,
-  getIdOferente,
+  idOferente,
   nombreOferente,
   fecha,
   cargarBoton,
 } from '../ui.js';
-import { window.location.hash } from '../router.js';
+import { navegar } from '../router.js';
 
 const EXPLICACION = {
   SIMPLE: 'Poco traslado y dedicación. Ideal para empezar a intercambiar.',
@@ -44,7 +44,7 @@ export async function render(contenedor, ctx) {
       e?.message || 'No pudimos cargar la publicación.',
       '<button class="btn btn-secundario" data-volver-cat>Volver al catálogo</button>'
     )}</section>`;
-    contenedor.querySelector('[data-volver-cat]')?.addEventListener('click', () => window.location.hash('/catalogo'));
+    contenedor.querySelector('[data-volver-cat]')?.addEventListener('click', () => navegar('/catalogo'));
     return;
   }
 
@@ -55,11 +55,11 @@ export async function render(contenedor, ctx) {
       'Puede que la hayan intercambiado o retirado del catálogo.',
       '<button class="btn btn-primario" data-volver-cat>Ver otras publicaciones</button>'
     )}</section>`;
-    contenedor.querySelector('[data-volver-cat]')?.addEventListener('click', () => window.location.hash('/catalogo'));
+    contenedor.querySelector('[data-volver-cat]')?.addEventListener('click', () => navegar('/catalogo'));
     return;
   }
 
-  const duenoId = pub.usuario_id || pub.oferente_id || pub.dueno_id || (typeof getIdOferente === 'function' ? getIdOferente(pub) : '') || '';
+  const duenoId = pub.usuario_id || pub.oferente_id || pub.dueno_id || (typeof idOferente === 'function' ? idOferente(pub) : '') || '';
   const esMia =
     Store.sesionActiva && duenoId !== '' && Number(duenoId) === Number(Store.usuario?.id);
   const nivel = String(pub.nivel_esfuerzo || 'SIMPLE').toUpperCase();
@@ -142,11 +142,11 @@ export async function render(contenedor, ctx) {
 
   const aviso = contenedor.querySelector('#detalle-aviso');
   const acciones = contenedor.querySelector('#detalle-acciones');
-  contenedor.querySelector('[data-volver-cat]').addEventListener('click', () => window.location.hash('/catalogo'));
+  contenedor.querySelector('[data-volver-cat]').addEventListener('click', () => navegar('/catalogo'));
 
   contenedor.querySelector('[data-ver-usuario]')?.addEventListener('click', (e) => {
     e.stopPropagation();
-    if (duenoId) window.location.hash(`/usuario/${encodeURIComponent(duenoId)}`);
+    if (duenoId) navegar(`/usuario/${encodeURIComponent(duenoId)}`);
   });
 
   if (esMia) {
@@ -155,8 +155,8 @@ export async function render(contenedor, ctx) {
       <button type="button" class="btn btn-secundario btn-block" data-mis-trueques>${icon('swap')} Ver mis trueques</button>
       <button type="button" class="btn btn-fantasma btn-block" data-publicar>${icon('plus')} Publicar otra cosa</button>
     `;
-    acciones.querySelector('[data-mis-trueques]').addEventListener('click', () => window.location.hash('/trueques'));
-    acciones.querySelector('[data-publicar]').addEventListener('click', () => window.location.hash('/publicar'));
+    acciones.querySelector('[data-mis-trueques]').addEventListener('click', () => navegar('/trueques'));
+    acciones.querySelector('[data-publicar]').addEventListener('click', () => navegar('/publicar'));
     return;
   }
 
@@ -166,10 +166,10 @@ export async function render(contenedor, ctx) {
       <button type="button" class="btn btn-secundario btn-block" data-login-chat>${icon('message')} Consultar por mensaje</button>
     `;
     acciones.querySelector('[data-login]').addEventListener('click', () =>
-      window.location.hash(`/login?volver=${encodeURIComponent(rutaActual)}`)
+      navegar(`/login?volver=${encodeURIComponent(ctx.ruta.hash)}`)
     );
     acciones.querySelector('[data-login-chat]').addEventListener('click', () =>
-      window.location.hash(`/login?volver=${encodeURIComponent(rutaActual)}`)
+      navegar(`/login?volver=${encodeURIComponent(ctx.ruta.hash)}`)
     );
     return;
   }
@@ -180,7 +180,7 @@ export async function render(contenedor, ctx) {
       'Podés recorrer el catálogo, pero no proponer trueques, enviar mensajes ni reportar hasta que se resuelva.'
     }</p></div></div>`;
     acciones.innerHTML = `<button type="button" class="btn btn-secundario btn-block" data-voluntariado>${icon('heart')} Ir a voluntariado</button>`;
-    acciones.querySelector('[data-voluntariado]').addEventListener('click', () => window.location.hash('/voluntariado'));
+    acciones.querySelector('[data-voluntariado]').addEventListener('click', () => navegar('/voluntariado'));
     return;
   }
 
@@ -192,7 +192,7 @@ export async function render(contenedor, ctx) {
 
   acciones.querySelector('#btn-proponer').addEventListener('click', () => abrirPropuesta(pub));
   acciones.querySelector('#btn-chat').addEventListener('click', () =>
-    window.location.hash(`/chat/${encodeURIComponent(duenoId)}?nombre=${encodeURIComponent(dueno)}`)
+    navegar(`/chat/${encodeURIComponent(duenoId)}?nombre=${encodeURIComponent(dueno)}`)
   );
   acciones.querySelector('#btn-reportar').addEventListener('click', () => reportar(pub, dueno));
 
@@ -214,7 +214,7 @@ export async function render(contenedor, ctx) {
         )}`;
         cuerpo.querySelector('[data-ir-publicar]').addEventListener('click', () => {
           cerrar();
-          window.location.hash('/publicar');
+          navegar('/publicar');
         });
         return;
       }
@@ -265,7 +265,7 @@ export async function render(contenedor, ctx) {
           await API.proponer(idPublicacion(publicacion), ids);
           cerrar();
           toast('¡Propuesta enviada! El dueño la va a revisar.', 'exito', 4500);
-          window.location.hash('/trueques');
+          navegar('/trueques');
         } catch (e) {
           restaurar();
           const faltaNexo = /nexo|habilitaci[oó]n/i.test(e?.message || '');
@@ -278,7 +278,7 @@ export async function render(contenedor, ctx) {
           }</div></div>`;
           errorEl.querySelector('[data-voluntariado]')?.addEventListener('click', () => {
             cerrar();
-            window.location.hash('/voluntariado');
+            navegar('/voluntariado');
           });
         }
       });
