@@ -187,6 +187,30 @@ La aplicación web y la API se ejecutan en Render; Neon aloja PostgreSQL:
 
 Las imágenes nuevas se guardan en Neon para que persistan entre reinicios y despliegues, sin depender de un disco persistente en Render. Quedan pendientes de revisión y sólo se muestran en el catálogo después de que una persona administradora las aprueba. Las imágenes anteriores no se recuperan si el almacenamiento temporal donde estaban ya fue eliminado. Las imágenes nuevas consumen espacio de la base de datos.
 
+## Usuarios de prueba
+
+Las siguientes cuentas se crean al ejecutar `seed.sql`. Usalas sólo en una base de pruebas; ese archivo vacía las tablas antes de cargar los datos.
+
+| Rol / caso de prueba | DNI | Nombre | Contraseña |
+|---|---|---|---|
+| Vecina con Nexo activo y publicaciones | `38450912` | Guillermina Valdez | `clave123` |
+| Vecino | `35123456` | Carlos Rodríguez | `clave123` |
+| Delegada | `28999888` | María Gómez | `clave123` |
+| Administrador | `11111111` | Admin Switch | `Switch2024!` |
+| Vecina | `31222444` | Laura Fernández | `clave123` |
+| Vecino | `27333455` | Diego Martínez | `clave123` |
+| Delegada | `29888777` | Sofía López | `clave123` |
+| Vecino | `33555666` | Martín Pérez | `clave123` |
+| Vecina | `34119988` | Valentina Sosa | `clave123` |
+| Vecino | `30888999` | Joaquín Romero | `clave123` |
+| Vecina | `35555667` | Camila Díaz | `clave123` |
+| Delegado | `31888999` | Nicolás Álvarez | `clave123` |
+| Vecina con suspensión vigente | `80990011` | Lucía Penalizada | `clave123` |
+| Cuenta bloqueada (no puede iniciar sesión) | `80990022` | Pedro Bloqueado | `clave123` |
+| Vecina con penalización vencida | `80990033` | Ana Vencida | `clave123` |
+
+La cuenta administradora permite probar el panel; las cuentas Lucía, Pedro y Ana sirven para verificar los distintos estados de bloqueo y penalización.
+
 ---
 
 ## Documentación adicional
