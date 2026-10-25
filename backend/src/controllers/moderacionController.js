@@ -1,21 +1,6 @@
-const fs = require('fs');
-const path = require('path');
-
 const asyncWrapper = require('../middlewares/asyncWrapper');
 const ModeracionModel = require('../models/moderacionModel');
-const almacen = require('../services/almacenImagenes');
 const { ValidationError, NotFoundError, ConflictError } = require('../utils/customErrors');
-
-const TIPOS_MIME = {
-  '.jpg': 'image/jpeg',
-  '.jpeg': 'image/jpeg',
-  '.png': 'image/png',
-  '.webp': 'image/webp',
-  '.gif': 'image/gif',
-  '.heic': 'image/heic',
-  '.heif': 'image/heif',
-  '.bmp': 'image/bmp',
-};
 
 /**
  * GET /api/admin/moderacion/:id/imagen
@@ -33,25 +18,22 @@ const verImagen = asyncWrapper(async (req, res) => {
     throw new ValidationError('El identificador de la moderación no es válido.');
   }
 
-  const registro = await ModeracionModel.obtenerArchivo(id);
+  const registro = await ModeracionModel.obtenerImagenRevision(id);
   if (!registro) {
     throw new NotFoundError('No encontramos esa imagen en la cola de moderación.');
   }
 
-  // Se sirve desde la carpeta donde esté realmente: cuarentena o pública.
-  const ruta = almacen.rutaAbsoluta(registro);
-  if (!almacen.existe(ruta)) {
-    throw new NotFoundError('El archivo de la imagen ya no está en el servidor.');
+  if (!registro.datos_imagen) {
+    throw new NotFoundError('Los datos de la imagen ya no están disponibles.');
   }
 
-  const extension = path.extname(registro).toLowerCase();
-  res.setHeader('Content-Type', TIPOS_MIME[extension] || 'application/octet-stream');
+  res.setHeader('Content-Type', registro.mime_detectado || 'application/octet-stream');
   // Sin caché: la moderadora tiene que ver el archivo tal como está.
   res.setHeader('Cache-Control', 'no-store');
   // El nombre original no se usa en la cabecera para no filtrar nada.
   res.setHeader('Content-Disposition', 'inline');
 
-  fs.createReadStream(ruta).pipe(res);
+  res.send(registro.datos_imagen);
 });
 
 /**
@@ -99,6 +81,11 @@ const aprobarImagen = asyncWrapper(async (req, res) => {
     throw new ValidationError('El identificador de la moderación no es válido.');
   }
 
+  const imagen = await ModeracionModel.obtenerPendiente(id);
+  if (!imagen?.imagen_disponible) {
+    throw new NotFoundError('Los datos de la imagen ya no están disponibles.');
+  }
+
   const resultado = await ModeracionModel.decidir({
     moderacionId: id,
     revisadoPor: req.usuario.id,
@@ -109,27 +96,6 @@ const aprobarImagen = asyncWrapper(async (req, res) => {
     throw new ConflictError('Esta imagen ya había sido revisada.');
   }
 
-  // La imagen sale de la cuarentena recién ahora: hasta acá no era
-  // descargable por nadie.
-  const nombreArchivo = resultado.fila.nombre_archivo;
-  const publicada = almacen.publicarDesdeCuarena(nombreArchivo);
-
-  if (!publicada) {
-    // La base ya la dio por aprobada, pero el archivo no llegó a la carpeta
-    // pública: se revierte para no dejar una publicación visible con una
-    // foto rota.
-    await ModeracionModel.reabrir(id);
-    throw new Error(
-      'No se pudo publicar el archivo de la imagen. La revisión quedó sin aplicar.'
-    );
-  }
-
-  // La publicación guardaba la URL de cuarentena; ahora apunta a la real.
-  await ModeracionModel.actualizarUrlPublicacion({
-    publicacionId: resultado.fila.publicacion_id,
-    nombreArchivo,
-  });
-
   res.status(200).json({
     exito: true,
     mensaje: 'Imagen aprobada. La publicación ya está visible en el catálogo.',
@@ -139,7 +105,7 @@ const aprobarImagen = asyncWrapper(async (req, res) => {
 
 /**
  * Rechaza una imagen por incumplimiento de las normas de la plataforma.
- * El archivo se borra del servidor.
+ * Los bytes de la imagen se borran de Neon.
  */
 const rechazarImagen = asyncWrapper(async (req, res) => {
   const id = Number(req.params.id);
@@ -152,7 +118,7 @@ const rechazarImagen = asyncWrapper(async (req, res) => {
     throw new ValidationError('Indicá el motivo del rechazo.');
   }
 
-  const archivo = await ModeracionModel.obtenerArchivo(id);
+  const archivo = await ModeracionModel.obtenerPendiente(id);
   if (!archivo) {
     throw new NotFoundError('No encontramos esa imagen en la cola de moderación.');
   }
@@ -169,14 +135,12 @@ const rechazarImagen = asyncWrapper(async (req, res) => {
     throw new ConflictError('Esta imagen ya había sido revisada.');
   }
 
-  // El archivo se elimina del disco: una imagen rechazada no debe quedar
-  // guardada en el servidor.
-  const eliminado = almacen.eliminarArchivo(archivo);
+  const eliminado = await ModeracionModel.eliminarImagen(id);
   await ModeracionModel.agregarMotivo(id, 'ARCHIVO_ELIMINADO');
 
   res.status(200).json({
     exito: true,
-    mensaje: 'Imagen rechazada y eliminada del servidor.',
+    mensaje: 'Imagen rechazada y eliminada.',
     datos: { ...resultado.fila, archivoEliminado: eliminado },
   });
 });
@@ -194,7 +158,7 @@ const rechazarPorMenorDeEdad = asyncWrapper(async (req, res) => {
     throw new ValidationError('El identificador de la moderación no es válido.');
   }
 
-  const archivo = await ModeracionModel.obtenerArchivo(id);
+  const archivo = await ModeracionModel.obtenerPendiente(id);
   if (!archivo) {
     throw new NotFoundError('No encontramos esa imagen en la cola de moderación.');
   }

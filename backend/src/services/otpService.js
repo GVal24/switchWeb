@@ -11,6 +11,8 @@ const {
 const { ValidationError, ForbiddenError, TooManyRequestsError } = require('../utils/customErrors');
 
 const PROPOSITO_REGISTRO = 'REGISTRO';
+const PROPOSITO_RESTABLECIMIENTO = 'RESTABLECIMIENTO';
+const PROPOSITOS_VALIDOS = [PROPOSITO_REGISTRO, PROPOSITO_RESTABLECIMIENTO];
 
 class OtpService {
   /**
@@ -54,7 +56,7 @@ class OtpService {
   static async solicitar({ telefono, proposito, ipOrigen, canalPreferido }) {
     const propositoNormalizado = (proposito || PROPOSITO_REGISTRO).toUpperCase();
 
-    if (propositoNormalizado !== PROPOSITO_REGISTRO) {
+    if (!PROPOSITOS_VALIDOS.includes(propositoNormalizado)) {
       throw new ValidationError(`Propósito de verificación desconocido: ${proposito}.`);
     }
 
@@ -67,7 +69,7 @@ class OtpService {
     // Freno de abuso por teléfono
     const enviadosHora = await OtpModel.contarEnviosRecientes({
       telefono: tel,
-      proposito: PROPOSITO_REGISTRO,
+      proposito: propositoNormalizado,
       minutos: 60,
     });
 
@@ -90,7 +92,7 @@ class OtpService {
     // Enfriamiento: no emitir un código nuevo mientras el anterior sigue vivo
     const activo = await OtpModel.obtenerActivo({
       telefono: tel,
-      proposito: PROPOSITO_REGISTRO,
+      proposito: propositoNormalizado,
     });
 
     if (activo) {
@@ -105,16 +107,24 @@ class OtpService {
     // Sólo queda un código válido a la vez
     await OtpModel.invalidarPendientes({
       telefono: tel,
-      proposito: PROPOSITO_REGISTRO,
+      proposito: propositoNormalizado,
     });
 
     const codigo = OtpService.generarCodigo();
-    const codigoHash = OtpService.hashearCodigo(tel, PROPOSITO_REGISTRO, codigo);
+    const codigoHash = OtpService.hashearCodigo(tel, propositoNormalizado, codigo);
     const expiraEn = new Date(Date.now() + config.minutosValidez * 60 * 1000);
 
     // Cadena de proveedores configurada, en orden de preferencia.
     // SMS queda primero salvo que la persona pida explícitamente WhatsApp.
-    const { cadena, problemas, usandoMock } = obtenerCadenaDeProveedores();
+    const {
+      cadena: proveedores,
+      problemas,
+      usandoMock,
+    } = obtenerCadenaDeProveedores();
+    const cadena =
+      config.esProduccion && propositoNormalizado === PROPOSITO_RESTABLECIMIENTO
+        ? proveedores.filter((proveedor) => proveedor.nombre !== 'MOCK')
+        : proveedores;
 
     for (const aviso of problemas) {
       // eslint-disable-next-line no-console
@@ -181,7 +191,7 @@ class OtpService {
     // eslint-disable-next-line no-await-in-loop
     const registro = await OtpModel.crear({
       telefono: tel,
-      proposito: PROPOSITO_REGISTRO,
+      proposito: propositoNormalizado,
       canal: canalUsado,
       codigoHash,
       ipOrigen,
@@ -199,7 +209,7 @@ class OtpService {
       // El código sólo vuelve al cliente en modo mock. Con un proveedor
       // real, este campo nunca se completa: el código sale sólo por el
       // teléfono de la persona.
-      ...(usandoMock && config.mockHabilitado
+      ...(usandoMock && config.mockHabilitado && !config.esProduccion
         ? { codigoMock: codigo, esMock: true }
         : {}),
     };
@@ -213,6 +223,10 @@ class OtpService {
   static async verificar({ telefono, proposito, codigo, ipOrigen }) {
     const propositoNormalizado = (proposito || PROPOSITO_REGISTRO).toUpperCase();
 
+    if (!PROPOSITOS_VALIDOS.includes(propositoNormalizado)) {
+      throw new ValidationError(`Propósito de verificación desconocido: ${proposito}.`);
+    }
+
     if (!esTelefonoValido(telefono)) {
       throw new ValidationError('Ingresá un número de celular válido.');
     }
@@ -224,7 +238,7 @@ class OtpService {
     const tel = normalizarTelefono(telefono);
     const registro = await OtpModel.obtenerActivo({
       telefono: tel,
-      proposito: PROPOSITO_REGISTRO,
+      proposito: propositoNormalizado,
     });
 
     if (!registro) {
@@ -234,7 +248,7 @@ class OtpService {
     }
 
     const esperado = registro.codigo_hash;
-    const recibido = OtpService.hashearCodigo(tel, PROPOSITO_REGISTRO, String(codigo));
+    const recibido = OtpService.hashearCodigo(tel, propositoNormalizado, String(codigo));
 
     if (!OtpService.compararCodigo(esperado, recibido)) {
       const actualizado = await OtpModel.sumarIntento(registro.id);
@@ -262,6 +276,7 @@ class OtpService {
     const tokenVerificacion = jwt.sign(
       {
         proposito: 'OTP_VERIFICADO',
+        propositoOtp: propositoNormalizado,
         telefono: tel,
         otpId: consumido.id,
         canal: consumido.canal,

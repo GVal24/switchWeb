@@ -122,20 +122,25 @@ npm install
 npm run dev     # o: npm start
 ```
 
-Las variables se leen desde `.env` en la raíz del proyecto. Copiá `.env.example` como `.env` y completá:
+La configuración usa los mismos nombres de variables en local y Render. En local, copiá `.env.example` como `.env` en la raíz del repositorio y completá los datos de tu PostgreSQL local. El backend detecta Render automáticamente: allí no carga el `.env` y usa las variables configuradas en **Environment** del servicio. Poné en Render los datos de Neon con esos mismos nombres (`DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `DB_PORT`) o configurá `DATABASE_URL` con la connection string de Neon. Así, el `.env` local no pisa las credenciales de producción.
 
 ```env
 PORT=3000
-DB_USER=usuario
-DB_PASSWORD=clave
-DB_HOST=localhost          # o el host de Neon
+DB_USER=postgres
+DB_PASSWORD=
+DB_HOST=localhost
 DB_PORT=5432
-DB_NAME=switch_db          # o neondb
-DB_SSL=false               # true en Neon/Supabase/Render (o se detecta solo por el host)
+DB_NAME=switch_db
+DB_SSL=false
+# Alternativa para Render: DATABASE_URL=postgresql://...Neon...
 JWT_SECRET=una_clave_larga_y_secreta
+OTP_PROVEEDOR=MOCK
+OTP_HMAC_SECRET=una_clave_larga_para_otp
 GPS_VALIDACION_ACTIVA=false
 ORIGENES_PERMITIDOS=       # vacío = permite cualquier origen (local)
 ```
+
+La opción **Recuperarla** envía un código al teléfono registrado y permite cambiar la contraseña sin intervención administrativa. Para que funcione en Render, configurá un proveedor real de SMS o WhatsApp (`OTP_PROVEEDOR` y sus credenciales; por ejemplo `TWILIO_SMS`) y una clave `OTP_HMAC_SECRET` larga y secreta. `MOCK` es solo para desarrollo local. Los cambios necesarios de base de datos están incluidos en `schema.sql`.
 
 ### 3. Web
 
@@ -171,7 +176,8 @@ El sistema se reparte en tres servicios:
 ### 1. Base de datos (Neon)
 
 1. Crear un proyecto en [neon.tech](https://neon.tech) y copiar la cadena de conexión.
-2. En el **SQL Editor**, ejecutar `schema.sql` y luego `seed.sql`.
+2. En el **SQL Editor**, ejecutar `schema.sql`. Incluye la estructura completa y las actualizaciones; se puede volver a ejecutar sobre una base existente sin borrar sus datos.
+3. Ejecutar `seed.sql` sólo si querés cargar los datos de demostración en una base descartable: ese archivo vacía las tablas antes de insertar los ejemplos.
 
 ### 2. Backend (Render)
 
@@ -179,6 +185,8 @@ El sistema se reparte en tres servicios:
 2. **Root Directory:** `backend`
 3. **Build Command:** `npm install`  ·  **Start Command:** `npm start`
 4. Cargar las variables de entorno (las de Neon + `JWT_SECRET` + `ORIGENES_PERMITIDOS`).
+
+Las imágenes nuevas se guardan como `BYTEA` en Neon, por lo que sobreviven los reinicios y despliegues de Render sin necesitar un disco persistente. Las imágenes quedan en cuarentena y recién se muestran en el catálogo cuando una persona administradora las aprueba. Las fotos subidas antes de este cambio no se recuperan automáticamente si Render ya eliminó el almacenamiento efímero. Considerá el espacio de base de datos disponible en tu plan de Neon: las fotos consumen ese espacio.
 
 ### 3. Web (Vercel)
 

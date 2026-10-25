@@ -1,11 +1,9 @@
-const path = require('path');
-const fs = require('fs');
+const crypto = require('crypto');
 const multer = require('multer');
 const asyncWrapper = require('../middlewares/asyncWrapper');
 const { ValidationError, ForbiddenError } = require('../utils/customErrors');
 const { clasificarEsfuerzo } = require('../utils/clasificadorEsfuerzo');
 const moderacionService = require('../services/moderacionService');
-const almacen = require('../services/almacenImagenes');
 const ModeracionModel = require('../models/moderacionModel');
 const P2PModel = require('../models/p2pModel');
 const VoluntariadoModel = require('../models/voluntariadoModel');
@@ -13,11 +11,6 @@ const VoluntariadoModel = require('../models/voluntariadoModel');
 // ==========================================
 // Configuración de subida de imágenes
 // ==========================================
-const UPLOADS_DIR = path.resolve(__dirname, '../../uploads');
-if (!fs.existsSync(UPLOADS_DIR)) {
-  fs.mkdirSync(UPLOADS_DIR, { recursive: true });
-}
-
 // Extensión segura según el mimetype REAL del archivo (no confiamos en el
 // nombre original, que puede venir vacío o con mayúsculas desde el celular).
 const EXTENSION_POR_MIMETYPE = {
@@ -31,21 +24,8 @@ const EXTENSION_POR_MIMETYPE = {
   'image/bmp': '.bmp'
 };
 
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => cb(null, UPLOADS_DIR),
-  filename: (req, file, cb) => {
-    const ext = EXTENSION_POR_MIMETYPE[(file.mimetype || '').toLowerCase()] || '.jpg';
-    cb(null, `pub_${req.usuario.id}_${Date.now()}${ext}`);
-  }
-});
-
-/** Borra un archivo del disco sin fallar si ya no existe. */
-function borrarArchivo(nombreArchivo) {
-  almacen.eliminarArchivo(nombreArchivo);
-}
-
 const subirImagenMiddleware = multer({
-  storage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
     const mimetype = (file.mimetype || '').toLowerCase();
@@ -108,50 +88,36 @@ const previsualizarEsfuerzo = asyncWrapper(async (req, res) => {
 
 /**
  * POST /api/catalogo/imagen (multipart, campo "imagen")
- * Guarda la foto elegida desde el dispositivo y devuelve su URL pública.
+ * Guarda la foto en Neon y devuelve su URL de acceso, aún bajo moderación.
  */
 const subirImagen = asyncWrapper(async (req, res) => {
   if (!req.file) {
     throw new ValidationError('No se recibió ninguna imagen.');
   }
 
-  // El filtrado técnico limpia los metadatos (incluidas las coordenadas GPS)
-  // y decide si el archivo es apto. Nunca habilita la publicación por sí solo.
-  let evaluacion;
-  try {
-    evaluacion = moderacionService.evaluarImagen(req.file.filename);
-  } catch (_) {
-    // Si el archivo no se puede ni leer, se borra: no se guarda a ciegas.
-    borrarArchivo(req.file.filename);
-    throw new ValidationError('No pudimos procesar la imagen. Probá con otra foto.');
-  }
+  const ext = EXTENSION_POR_MIMETYPE[(req.file.mimetype || '').toLowerCase()] || '.jpg';
+  const nombreArchivo = `pub_${req.usuario.id}_${crypto.randomUUID()}${ext}`;
+  // La imagen se limpia y se guarda en Neon: el filesystem efímero de Render
+  // no debe ser la única copia de una foto subida.
+  const evaluacion = moderacionService.evaluarImagen(req.file.buffer);
 
   const registro = await ModeracionModel.registrar({
     usuarioId: req.usuario.id,
-    nombreArchivo: req.file.filename,
+    nombreArchivo,
     mimeDetectado: evaluacion.mimeDetectado || null,
     pesoBytes: evaluacion.bytes,
+    datosImagen: evaluacion.datosImagen,
     evaluacion,
   });
 
-  // Desde este punto la imagen queda aislada: no se sirve por HTTP hasta que
-  // una persona la apruebe. La URL devuelta es la de cuarentena y por eso
-  // todavía no abre nada.
-  if (!almacen.enviarACuarena(req.file.filename)) {
-    throw new ValidationError(
-      'No pudimos dejar la imagen en espera de revisión. Probá de nuevo.'
-    );
-  }
-
-  const base = `${req.protocol}://${req.get('host')}/uploads`;
-  const url = almacen.urlPara(req.file.filename, base);
+  const url = `/api/catalogo/imagenes/${encodeURIComponent(nombreArchivo)}`;
 
   res.status(201).json({
     exito: true,
     mensaje: 'Imagen subida. Se mostrará cuando la moderación la apruebe.',
     datos: {
       url,
-      nombreArchivo: req.file.filename,
+      nombreArchivo,
       moderacionId: registro.id,
       // El control que protege a las infancias es la revisión de una
       // persona, no este filtro.
@@ -162,6 +128,22 @@ const subirImagen = asyncWrapper(async (req, res) => {
           : null,
     },
   });
+});
+
+const verImagenPublicada = asyncWrapper(async (req, res) => {
+  const imagen = await ModeracionModel.obtenerImagenPublica(req.params.nombreArchivo);
+  if (!imagen) {
+    return res.status(404).json({
+      exito: false,
+      codigoEstado: 404,
+      mensaje: 'La imagen no está disponible.',
+    });
+  }
+
+  res.setHeader('Content-Type', imagen.mime_detectado || 'application/octet-stream');
+  res.setHeader('Cache-Control', 'public, max-age=300');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.send(imagen.datos_imagen);
 });
 
 /**
@@ -215,10 +197,7 @@ const crearPublicacionP2P = asyncWrapper(async (req, res) => {
 
     // La URL se arma en el servidor: no se acepta ninguna que venga del
     // cliente, para que apunte a la imagen que realmente se verificó.
-    imagenUrl = almacen.urlPara(
-      nombreArchivo,
-      `${req.protocol}://${req.get('host')}/uploads`
-    );
+    imagenUrl = `/api/catalogo/imagenes/${encodeURIComponent(nombreArchivo)}`;
   } else if (imagenUrl) {
     // Mandó una URL pero ningún nombre de archivo: no se puede verificar de
     // quién es, así que no se acepta.
@@ -261,6 +240,7 @@ module.exports = {
   listarMisPublicaciones,
   previsualizarEsfuerzo,
   subirImagen,
+  verImagenPublicada,
   subirImagenMiddleware,
   crearPublicacionP2P
 };

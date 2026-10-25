@@ -1,6 +1,6 @@
 -- ============================================================
 -- PROYECTO SWITCH: DATOS DE PRUEBA E INICIALIZACIÓN (seed.sql)
--- Requiere haber ejecutado schema.sql sobre una base vacía.
+-- Requiere haber ejecutado schema.sql.
 --
 -- CUIDADO: este archivo empieza con TRUNCATE. Borra lo que haya en la base,
 -- así que no lo corras sobre una base con datos que quieras conservar.
@@ -9,11 +9,9 @@
 --   - Usuarios VECINO/DELEGADO => clave123
 --   - Usuario ADMIN            => Switch2024!
 -- 
--- Restablecimiento de contraseña (campos añadidos en schema.sql):
---   - password_reset_token: token único generado para reset (vence en 1 hora)
---   - password_reset_expires: fecha/hora de vencimiento del token
---   - Si un usuario solicita reset, estos campos se llenan y el frontend
---     muestra un enlace para establecer nueva contraseña.
+-- Recuperación de contraseña:
+--   - El token se genera sólo después de verificar el código enviado al teléfono.
+--   - El token de cambio vence a los 15 minutos y se invalida al usarlo.
 -- ============================================================
 
 TRUNCATE TABLE

@@ -116,9 +116,18 @@ export async function render(contenedor, ctx) {
         <div class="dueno-fila">
           ${avatar(dueno, 'avatar-lg')}
           <div class="crece">
-            <button type="button" class="dueno-nombre" data-ver-usuario="${esc(duenoId)}" style="border:0;background:none;padding:0;text-align:left;cursor:pointer;color:inherit;font-weight:inherit;">
-              ${esc(dueno)}${esMia ? ' (vos)' : ''}
-            </button>
+            <div class="dueno-nombre-fila">
+              <button type="button" class="dueno-nombre" data-ver-usuario="${esc(duenoId)}" style="border:0;background:none;padding:0;text-align:left;cursor:pointer;color:inherit;font-weight:inherit;">
+                ${esc(dueno)}${esMia ? ' (vos)' : ''}
+              </button>
+              ${
+                Store.sesionActiva && !Store.suspendido && !esMia && duenoId
+                  ? `<button type="button" class="icon-btn reporte-usuario" data-reportar-usuario aria-label="Reportar a ${esc(
+                      dueno
+                    )}">${icon('flag')}</button>`
+                  : ''
+              }
+            </div>
             <div class="dueno-meta">
               ${icon('swap')} ${Number.isFinite(trueques) ? trueques : 0} trueques
               ${icon('heart')} ${Number.isFinite(voluntariados) ? voluntariados : 0} voluntariados
@@ -129,13 +138,6 @@ export async function render(contenedor, ctx) {
               }
             </div>
           </div>
-          ${
-            Store.sesionActiva && !Store.suspendido && !esMia && duenoId
-              ? `<button type="button" class="icon-btn" data-reportar-usuario aria-label="Reportar a ${esc(
-                  dueno
-                )}">${icon('alert')}</button>`
-              : ''
-          }
         </div>
       </div>
 

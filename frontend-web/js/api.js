@@ -138,6 +138,15 @@ export const API = {
     return datos(res);
   },
 
+  async verificarResetPassword({ dni, codigo }) {
+    const res = await pedir('/auth/password-reset/verificar', {
+      metodo: 'POST',
+      auth: false,
+      body: { dni, codigo },
+    });
+    return datos(res);
+  },
+
   async confirmarResetPassword({ token, nuevaPassword }) {
     const res = await pedir('/auth/password-reset/confirm', {
       metodo: 'POST',

@@ -6,7 +6,7 @@
 -- ------------------------------------------------------------
 -- 1. TABLA: usuarios
 -- ------------------------------------------------------------
-CREATE TABLE usuarios (
+CREATE TABLE IF NOT EXISTS usuarios (
     id SERIAL PRIMARY KEY,
     dni VARCHAR(15) UNIQUE NOT NULL,
     nombre VARCHAR(50) NOT NULL,
@@ -20,7 +20,7 @@ CREATE TABLE usuarios (
     suspendido_hasta TIMESTAMP NULL,           -- fecha de fin de suspensión temporal (NULL = sin suspensión)
     motivo_suspension TEXT NULL,               -- por qué se suspendió (ej. hallazgo de posible imagen de menor)
     password_reset_token VARCHAR(100),         -- token para restablecimiento de contraseña (NULL = no hay solicitud pendiente)
-    password_reset_expires TIMESTAMP,          -- cuándo vence el token (NULL = sin vencimiento)
+    password_reset_expires TIMESTAMP,          -- cuándo vence el token (NULL = sin solicitud)
     creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT chk_rol CHECK (rol IN ('VECINO', 'DELEGADO', 'ADMIN'))
@@ -29,7 +29,7 @@ CREATE TABLE usuarios (
 -- ------------------------------------------------------------
 -- 2. TABLA: instituciones
 -- ------------------------------------------------------------
-CREATE TABLE instituciones (
+CREATE TABLE IF NOT EXISTS instituciones (
     id SERIAL PRIMARY KEY,
     nombre VARCHAR(100) NOT NULL,
     tipo VARCHAR(50) NOT NULL, -- 'COMEDOR', 'HOGAR', 'BIBLIOTECA', 'CENTRO_DIA', etc.
@@ -45,7 +45,7 @@ CREATE TABLE instituciones (
 -- ------------------------------------------------------------
 -- 3. TABLA: cupos_necesidad
 -- ------------------------------------------------------------
-CREATE TABLE cupos_necesidad (
+CREATE TABLE IF NOT EXISTS cupos_necesidad (
     id SERIAL PRIMARY KEY,
     institucion_id INT NOT NULL REFERENCES instituciones(id) ON DELETE CASCADE,
     titulo VARCHAR(100) NOT NULL,
@@ -65,7 +65,7 @@ CREATE TABLE cupos_necesidad (
 -- ------------------------------------------------------------
 -- 4. TABLA: nexos_sociales
 -- ------------------------------------------------------------
-CREATE TABLE nexos_sociales (
+CREATE TABLE IF NOT EXISTS nexos_sociales (
     id SERIAL PRIMARY KEY,
     usuario_id INT NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
     cupo_necesidad_id INT REFERENCES cupos_necesidad(id),
@@ -85,7 +85,7 @@ CREATE TABLE nexos_sociales (
 -- ------------------------------------------------------------
 -- 5. TABLA: publicaciones_p2p
 -- ------------------------------------------------------------
-CREATE TABLE publicaciones_p2p (
+CREATE TABLE IF NOT EXISTS publicaciones_p2p (
     id SERIAL PRIMARY KEY,
     usuario_id INT NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
     titulo VARCHAR(100) NOT NULL,
@@ -109,7 +109,7 @@ CREATE TABLE publicaciones_p2p (
 --    emisor_id / receptor_id son VARCHAR para soportar tanto
 --    IDs de usuarios ("1", "2") como instituciones ("inst_1")
 -- ------------------------------------------------------------
-CREATE TABLE mensajes_chat (
+CREATE TABLE IF NOT EXISTS mensajes_chat (
     id SERIAL PRIMARY KEY,
     emisor_id VARCHAR(50) NOT NULL,
     receptor_id VARCHAR(50) NOT NULL,
@@ -118,13 +118,13 @@ CREATE TABLE mensajes_chat (
     creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_mensajes_conversacion ON mensajes_chat (emisor_id, receptor_id);
-CREATE INDEX idx_mensajes_creado ON mensajes_chat (creado_en);
+CREATE INDEX IF NOT EXISTS idx_mensajes_conversacion ON mensajes_chat (emisor_id, receptor_id);
+CREATE INDEX IF NOT EXISTS idx_mensajes_creado ON mensajes_chat (creado_en);
 
 -- ------------------------------------------------------------
 -- 7. TABLA: reportes (denuncias de la comunidad)
 -- ------------------------------------------------------------
-CREATE TABLE reportes (
+CREATE TABLE IF NOT EXISTS reportes (
     id SERIAL PRIMARY KEY,
     reportante_id VARCHAR(50) NOT NULL,
     reportante_nombre VARCHAR(101) NOT NULL DEFAULT '',
@@ -140,7 +140,7 @@ CREATE TABLE reportes (
 -- ------------------------------------------------------------
 -- 8. TABLA: intercambios (propuestas de Switch / trueques)
 -- ------------------------------------------------------------
-CREATE TABLE intercambios (
+CREATE TABLE IF NOT EXISTS intercambios (
     id SERIAL PRIMARY KEY,
     publicacion_deseada_id INT NOT NULL REFERENCES publicaciones_p2p(id) ON DELETE CASCADE,
     titulo_deseado VARCHAR(100) NOT NULL DEFAULT '',
@@ -156,14 +156,14 @@ CREATE TABLE intercambios (
     CONSTRAINT chk_estado_intercambio CHECK (estado IN ('PENDIENTE', 'ACEPTADA', 'RECHAZADA', 'COMPLETADO'))
 );
 
-CREATE INDEX idx_intercambios_creado ON intercambios (creado_en);
-CREATE INDEX idx_intercambios_dueno ON intercambios (dueno_id);
-CREATE INDEX idx_intercambios_ofertante ON intercambios (ofertante_id);
+CREATE INDEX IF NOT EXISTS idx_intercambios_creado ON intercambios (creado_en);
+CREATE INDEX IF NOT EXISTS idx_intercambios_dueno ON intercambios (dueno_id);
+CREATE INDEX IF NOT EXISTS idx_intercambios_ofertante ON intercambios (ofertante_id);
 
 -- ------------------------------------------------------------
 -- 9. TABLA: resenas (calificaciones entre vecinos tras un trueque)
 -- ------------------------------------------------------------
-CREATE TABLE resenas (
+CREATE TABLE IF NOT EXISTS resenas (
     id SERIAL PRIMARY KEY,
     intercambio_id INT NOT NULL REFERENCES intercambios(id) ON DELETE CASCADE,
     autor_id INT NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
@@ -178,7 +178,7 @@ CREATE TABLE resenas (
 -- Sugerencias de la comunidad sobre el nivel de esfuerzo de una publicación.
 -- El clasificador automático puede equivocarse: los usuarios marcan el error
 -- y administración decide si aplica la corrección.
-CREATE TABLE sugerencias_esfuerzo (
+CREATE TABLE IF NOT EXISTS sugerencias_esfuerzo (
     id SERIAL PRIMARY KEY,
     publicacion_id INT NOT NULL REFERENCES publicaciones_p2p(id) ON DELETE CASCADE,
     usuario_id INT NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
@@ -198,10 +198,10 @@ CREATE TABLE sugerencias_esfuerzo (
 --     en claro: se almacena su HMAC-SHA256 con clave del servidor.
 --     Al consumirse queda marcado y no puede reutilizarse.
 -- ------------------------------------------------------------
-CREATE TABLE verificaciones_otp (
+CREATE TABLE IF NOT EXISTS verificaciones_otp (
     id SERIAL PRIMARY KEY,
     telefono VARCHAR(20) NOT NULL,
-    proposito VARCHAR(30) NOT NULL,            -- 'REGISTRO' (único uso por ahora)
+    proposito VARCHAR(30) NOT NULL,            -- 'REGISTRO' o 'RESTABLECIMIENTO'
     canal VARCHAR(10) NOT NULL,                -- canal por el que se envió
     codigo_hash VARCHAR(64) NOT NULL,          -- HMAC-SHA256 del código
     ip_origen VARCHAR(45) NULL,                -- freno de abuso por origen
@@ -211,16 +211,16 @@ CREATE TABLE verificaciones_otp (
     consumido_en TIMESTAMP NULL,               -- NULL = todavía sin usar
     creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
-    CONSTRAINT chk_otp_proposito CHECK (proposito IN ('REGISTRO')),
+    CONSTRAINT chk_otp_proposito CHECK (proposito IN ('REGISTRO', 'RESTABLECIMIENTO')),
     CONSTRAINT chk_otp_canal CHECK (canal IN ('SMS', 'WHATSAPP'))
 );
 
 -- Búsqueda del código activo de un teléfono para un propósito dado
-CREATE INDEX idx_otp_telefono_proposito
+CREATE INDEX IF NOT EXISTS idx_otp_telefono_proposito
     ON verificaciones_otp (telefono, proposito, creado_en DESC);
 
 -- Purga periódica de códigos vencidos
-CREATE INDEX idx_otp_expira_en
+CREATE INDEX IF NOT EXISTS idx_otp_expira_en
     ON verificaciones_otp (expira_en);
 
 -- ------------------------------------------------------------
@@ -231,7 +231,7 @@ CREATE INDEX idx_otp_expira_en
 --     usuario_id es NULL porque el registro ocurre justo al crear la
 --     cuenta: primero se acepta, después se inserta el usuario.
 -- ------------------------------------------------------------
-CREATE TABLE aceptaciones_legales (
+CREATE TABLE IF NOT EXISTS aceptaciones_legales (
     id SERIAL PRIMARY KEY,
     usuario_id INT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
     documento VARCHAR(20) NOT NULL,            -- 'TERMINOS' | 'PRIVACIDAD'
@@ -244,7 +244,7 @@ CREATE TABLE aceptaciones_legales (
     CONSTRAINT chk_doc_aceptado CHECK (documento IN ('TERMINOS', 'PRIVACIDAD'))
 );
 
-CREATE INDEX idx_aceptaciones_usuario
+CREATE INDEX IF NOT EXISTS idx_aceptaciones_usuario
     ON aceptaciones_legales (usuario_id);
 
 -- ------------------------------------------------------------
@@ -262,11 +262,12 @@ CREATE INDEX idx_aceptaciones_usuario
 --     formato real del archivo, dimensiones, peso, contenido animado y
 --     metadatos EXIF/GPS (que además es un riesgo de privacidad).
 -- ------------------------------------------------------------
-CREATE TABLE moderacion_imagenes (
+CREATE TABLE IF NOT EXISTS moderacion_imagenes (
     id SERIAL PRIMARY KEY,
     publicacion_id INT NULL REFERENCES publicaciones_p2p(id) ON DELETE CASCADE,
     usuario_id INT NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
     nombre_archivo VARCHAR(255) NOT NULL,
+    datos_imagen BYTEA NULL,                    -- bytes sanitizados; Neon es el almacenamiento persistente
     mime_detectado VARCHAR(30) NULL,           -- leído de los bytes reales, no del enviado
     peso_bytes INT NULL,
 
@@ -291,15 +292,15 @@ CREATE TABLE moderacion_imagenes (
 );
 
 -- Cola de trabajo del panel de administración
-CREATE INDEX idx_moderacion_pendientes
+CREATE INDEX IF NOT EXISTS idx_moderacion_pendientes
     ON moderacion_imagenes (filtro_estado, creado_en)
     WHERE decision IS NULL;
 
-CREATE INDEX idx_moderacion_publicacion
+CREATE INDEX IF NOT EXISTS idx_moderacion_publicacion
     ON moderacion_imagenes (publicacion_id);
 
 -- Evita que la misma imagen se procese dos veces por carrera
-CREATE UNIQUE INDEX idx_moderacion_archivo_unico
+CREATE UNIQUE INDEX IF NOT EXISTS idx_moderacion_archivo_unico
     ON moderacion_imagenes (nombre_archivo);
 
 -- ------------------------------------------------------------
@@ -315,7 +316,7 @@ CREATE UNIQUE INDEX idx_moderacion_archivo_unico
 --     'leido' es lo que dispara el aviso en el panel: mientras sea FALSE
 --     el mensaje cuenta como pendiente de responder.
 -- ------------------------------------------------------------
-CREATE TABLE mensajes_contacto (
+CREATE TABLE IF NOT EXISTS mensajes_contacto (
     id SERIAL PRIMARY KEY,
     usuario_id INT NULL REFERENCES usuarios(id) ON DELETE SET NULL,
     autor_nombre VARCHAR(101) NOT NULL,        -- nombre y apellido al momento de escribir
@@ -335,8 +336,31 @@ CREATE TABLE mensajes_contacto (
 );
 
 -- Bandeja del panel: primero lo que nadie leyó, y de lo más nuevo a lo más viejo
-CREATE INDEX idx_mensajes_contacto_pendientes
+CREATE INDEX IF NOT EXISTS idx_mensajes_contacto_pendientes
     ON mensajes_contacto (leido, creado_en DESC);
 
-CREATE INDEX idx_mensajes_contacto_usuario
+CREATE INDEX IF NOT EXISTS idx_mensajes_contacto_usuario
     ON mensajes_contacto (usuario_id);
+
+-- ------------------------------------------------------------
+-- Actualizaciones idempotentes para bases creadas con versiones anteriores.
+-- El mismo schema.sql sirve tanto para una base vacía como para actualizar
+-- las tablas existentes sin borrar sus datos.
+-- ------------------------------------------------------------
+ALTER TABLE usuarios
+    ADD COLUMN IF NOT EXISTS motivo_suspension TEXT NULL,
+    ADD COLUMN IF NOT EXISTS password_reset_token VARCHAR(100),
+    ADD COLUMN IF NOT EXISTS password_reset_expires TIMESTAMP;
+
+ALTER TABLE publicaciones_p2p
+    ALTER COLUMN estado SET DEFAULT 'PENDIENTE_REVISION',
+    DROP CONSTRAINT IF EXISTS chk_estado_publicacion,
+    ADD CONSTRAINT chk_estado_publicacion
+        CHECK (estado IN ('PENDIENTE_REVISION', 'Activo', 'Pausado', 'Completado', 'Rechazada'));
+
+ALTER TABLE verificaciones_otp
+    DROP CONSTRAINT IF EXISTS chk_otp_proposito,
+    ADD CONSTRAINT chk_otp_proposito CHECK (proposito IN ('REGISTRO', 'RESTABLECIMIENTO'));
+
+ALTER TABLE moderacion_imagenes
+    ADD COLUMN IF NOT EXISTS datos_imagen BYTEA NULL;

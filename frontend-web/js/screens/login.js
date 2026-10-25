@@ -63,8 +63,6 @@ export async function render(contenedor, ctx) {
           ·
           <button type="button" data-ver="privacidad">Política de Privacidad</button>
           <br>
-          ¿Problemas para ingresar? <button type="button" data-ir-contacto>Escribinos</button>
-          <br>
           ¿Olvidaste tu contraseña? <button type="button" data-ir-reset>Recuperarla</button>
         </p>
       </div>
@@ -100,22 +98,7 @@ export async function render(contenedor, ctx) {
   });
 
   contenedor.querySelector('[data-ir-registro]').addEventListener('click', () => navegar('/registro'));
-  contenedor.querySelector('[data-ir-contacto]').addEventListener('click', () => navegar('/contacto'));
-  contenedor.querySelector('[data-ir-reset]').addEventListener('click', async () => {
-    const dni = prompt('Ingresá tu DNI para solicitar el restablecimiento de contraseña:');
-    if (!dni) return;
-    const dniLimpio = dni.replace(/\D/g, '');
-    if (dniLimpio.length !== 8) {
-      toast('Por favor ingresá un DNI válido (8 dígitos).', 'aviso');
-      return;
-    }
-    try {
-      const respuesta = await API.solicitarResetPassword({ dni: dniLimpio });
-      toast(respuesta.mensaje || 'Se envió un enlace de restablecimiento.', 'exito');
-    } catch (e) {
-      toast(e?.message || 'No pudimos procesar la solicitud. Probá de nuevo.', 'error');
-    }
-  });
+  contenedor.querySelector('[data-ir-reset]').addEventListener('click', recuperarPassword);
   contenedor.querySelectorAll('[data-ver]').forEach((b) =>
     b.addEventListener('click', () => verLegal(b.dataset.ver))
   );
@@ -168,6 +151,111 @@ export async function render(contenedor, ctx) {
       anunciarError(errorEl);
     }
   });
+}
+
+async function recuperarPassword() {
+  const dniIngresado = await pedirDatoReset({
+    titulo: 'Recuperar contraseña',
+    etiqueta: 'DNI',
+    tipo: 'text',
+    inputmode: 'numeric',
+    ayuda: 'Te enviaremos un código al teléfono asociado a tu cuenta.',
+    autocompletar: 'username',
+  });
+  if (dniIngresado === null) return;
+
+  const dni = dniIngresado.replace(/\D/g, '');
+  if (dni.length !== 8) {
+    toast('Ingresá un DNI válido de 8 dígitos.', 'aviso');
+    return;
+  }
+
+  try {
+    const solicitud = await API.solicitarResetPassword({ dni });
+    if (solicitud.codigoMock) {
+      toast(`Modo de prueba: el código es ${solicitud.codigoMock}.`, 'info');
+    }
+
+    const codigo = await pedirDatoReset({
+      titulo: 'Verificar teléfono',
+      etiqueta: 'Código de 6 dígitos',
+      tipo: 'text',
+      inputmode: 'numeric',
+      ayuda: 'Si el DNI está registrado, enviamos un código al teléfono asociado.',
+      autocompletar: 'one-time-code',
+      maxLength: 6,
+    });
+    if (codigo === null) return;
+
+    const verificacion = await API.verificarResetPassword({
+      dni,
+      codigo: codigo.replace(/\D/g, ''),
+    });
+    const nuevaPassword = await pedirDatoReset({
+      titulo: 'Elegir contraseña nueva',
+      etiqueta: 'Nueva contraseña (mínimo 6 caracteres)',
+      tipo: 'password',
+      autocompletar: 'new-password',
+    });
+    if (nuevaPassword === null) return;
+    if (nuevaPassword.length < 6) {
+      toast('La contraseña debe tener al menos 6 caracteres.', 'aviso');
+      return;
+    }
+
+    const confirmacion = await pedirDatoReset({
+      titulo: 'Confirmar contraseña',
+      etiqueta: 'Repetí la contraseña nueva',
+      tipo: 'password',
+      autocompletar: 'new-password',
+    });
+    if (confirmacion === null) return;
+    if (confirmacion !== nuevaPassword) {
+      toast('Las contraseñas no coinciden.', 'aviso');
+      return;
+    }
+
+    await API.confirmarResetPassword({
+      token: verificacion.token,
+      nuevaPassword,
+    });
+    toast('Contraseña actualizada. Ya podés ingresar.', 'exito');
+  } catch (e) {
+    toast(e?.message || 'No pudimos restablecer la contraseña. Probá de nuevo.', 'error');
+  }
+}
+
+let contadorDialogosReset = 0;
+
+function pedirDatoReset({
+  titulo,
+  etiqueta,
+  tipo = 'text',
+  inputmode,
+  ayuda,
+  autocompletar = 'off',
+  maxLength = 100,
+}) {
+  const id = `reset-dato-${++contadorDialogosReset}`;
+  const tipoInput = tipo === 'password' ? 'password' : 'text';
+  const modal = dialogo({
+    titulo,
+    icono: 'lock',
+    html: `<p class="modal-texto">${esc(ayuda || '')}</p>
+      <label class="campo" for="${id}">
+        <span class="campo-etiqueta">${esc(etiqueta)}</span>
+        <input class="campo-input" id="${id}" type="${tipoInput}"
+          ${inputmode ? `inputmode="${inputmode}"` : ''}
+          autocomplete="${autocompletar}" maxlength="${maxLength}" required>
+      </label>`,
+    acciones: [
+      { texto: 'Cancelar', valor: 'cancelar', clase: 'btn-fantasma' },
+      { texto: 'Continuar', valor: 'continuar', clase: 'btn-primario', auto: true },
+    ],
+  });
+  const campo = document.getElementById(id);
+  campo?.focus();
+  return modal.then((accion) => (accion === 'continuar' ? campo?.value ?? '' : null));
 }
 
 function anunciarError(el) {

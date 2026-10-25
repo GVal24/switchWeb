@@ -1,5 +1,8 @@
 const asyncWrapper = require('../middlewares/asyncWrapper');
 const AuthService = require('../services/authService');
+const OtpService = require('../services/otpService');
+const UsuarioModel = require('../models/usuarioModel');
+const { ValidationError } = require('../utils/customErrors');
 
 const registrarUsuario = asyncWrapper(async (req, res) => {
   const aceptoTerminos = req.body.aceptoTerminos ?? req.body.acepto_terminos;
@@ -34,39 +37,66 @@ const loginUsuario = asyncWrapper(async (req, res) => {
   });
 });
 
-/***
- * Solicita un restablecimiento de contraseña.
- * Espera un body con { dni: string }.
- * Genera un token único, lo guarda en la BD con vencimiento a 1 hora,
- * y devuelve un mensaje de éxito. No revela si el DNI existe o no (por seguridad).
- */
 const solicitarResetPassword = asyncWrapper(async (req, res) => {
-  const { dni } = req.body;
-  if (!dni) {
+  const dni = String(req.body.dni || '').replace(/\D/g, '');
+  if (dni.length !== 8) {
     throw new ValidationError('El DNI es obligatorio.');
   }
-  const resultado = await UsuarioModel.solicitarReset(dni);
-  if (!resultado) {
-    // Por seguridad, respondemos igual aunque el DNI no exista
-    return res.status(200).json({
-      exito: true,
-      mensaje: 'Si el DNI está registrado, recibirás un enlace para restablecer tu contraseña.'
+
+  const telefono = await UsuarioModel.obtenerTelefonoParaReset(dni);
+  let codigoMock;
+  if (telefono) {
+    const resultado = await OtpService.solicitar({
+      telefono,
+      proposito: 'RESTABLECIMIENTO',
+      ipOrigen: req.ip || req.connection?.remoteAddress || null,
     });
+    codigoMock = resultado.codigoMock;
   }
+
   res.status(200).json({
     exito: true,
-    mensaje: 'Si el DNI está registrado, recibirás un enlace para restablecer tu contraseña.',
-    datos: { token: resultado.token, expires: resultado.expires }
+    mensaje: 'Si el DNI está registrado, enviamos un código al teléfono asociado.',
+    datos: codigoMock ? { codigoMock } : {},
   });
 });
 
-/***
- * Confirma un restablecimiento de contraseña usando un token válido.
- * Espera un body con { token: string, nuevaPassword: string }.
- * Hashea la nueva contraseña, la guarda y limpia los campos de reset.
- */
+const verificarCodigoResetPassword = asyncWrapper(async (req, res) => {
+  const dni = String(req.body.dni || '').replace(/\D/g, '');
+  const codigo = String(req.body.codigo || '').trim();
+  if (dni.length !== 8 || !codigo) {
+    throw new ValidationError('Ingresá el DNI y el código recibido.');
+  }
+
+  const telefono = await UsuarioModel.obtenerTelefonoParaReset(dni);
+  if (!telefono) {
+    throw new ValidationError('El código no es válido o venció. Pedí uno nuevo.');
+  }
+
+  await OtpService.verificar({
+    telefono,
+    codigo,
+    proposito: 'RESTABLECIMIENTO',
+  });
+  const reset = await UsuarioModel.crearTokenReset({
+    dni,
+    telefono,
+  });
+  if (!reset) {
+    throw new ValidationError('No pudimos validar la solicitud. Pedí un código nuevo.');
+  }
+
+  res.status(200).json({
+    exito: true,
+    datos: { token: reset.token },
+  });
+});
+
 const confirmarResetPassword = asyncWrapper(async (req, res) => {
   const { token, nuevaPassword } = req.body;
+  if (!token || typeof nuevaPassword !== 'string' || nuevaPassword.length < 6) {
+    throw new ValidationError('La contraseña debe tener al menos 6 caracteres.');
+  }
   const usuario = await UsuarioModel.confirmarReset(token, nuevaPassword);
   res.status(200).json({
     exito: true,
@@ -79,5 +109,6 @@ module.exports = {
   registrarUsuario,
   loginUsuario,
   solicitarResetPassword,
+  verificarCodigoResetPassword,
   confirmarResetPassword
 };

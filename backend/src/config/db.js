@@ -1,27 +1,45 @@
 const { Pool } = require('pg');
-require('dotenv').config();
+const { esRender } = require('./environment');
 
-// SSL: las bases administradas (Neon, Supabase, Render, etc.) exigen
-// conexión cifrada. En desarrollo local (PostgreSQL en la misma máquina)
-// no hace falta. Se activa con DB_SSL=true, o se detecta solo por el host.
-const usarSsl =
+const connectionString = process.env.DATABASE_URL;
+const host = process.env.DB_HOST || (esRender ? '' : 'localhost');
+const usaSsl =
   String(process.env.DB_SSL || '').toLowerCase() === 'true' ||
-  /neon\.tech|supabase|render\.com|amazonaws\.com/i.test(process.env.DB_HOST || '');
+  /neon\.tech|supabase|render\.com|amazonaws\.com/i.test(
+    `${host} ${connectionString || ''}`
+  );
 
-const pool = new Pool({
-  user: process.env.DB_USER || 'postgres',
-  host: process.env.DB_HOST || 'localhost',
-  database: process.env.DB_NAME || 'switch_db',
-  password: process.env.DB_PASSWORD || '1234',
-  port: process.env.DB_PORT || 5432,
-  ...(usarSsl ? { ssl: { rejectUnauthorized: false } } : {}),
-});
+if (
+  esRender &&
+  !connectionString &&
+  (!host || !process.env.DB_USER || !process.env.DB_NAME || !process.env.DB_PASSWORD)
+) {
+  throw new Error(
+    'Falta la configuración de PostgreSQL en Render. Configurá DATABASE_URL o DB_HOST, DB_USER, DB_NAME y DB_PASSWORD con las credenciales de Neon.'
+  );
+}
+
+const pool = new Pool(
+  connectionString
+    ? {
+        connectionString,
+        ...(usaSsl ? { ssl: { rejectUnauthorized: false } } : {}),
+      }
+    : {
+        user: process.env.DB_USER || 'postgres',
+        host,
+        database: process.env.DB_NAME || 'switch_db',
+        ...(process.env.DB_PASSWORD ? { password: process.env.DB_PASSWORD } : {}),
+        port: process.env.DB_PORT || 5432,
+        ...(usaSsl ? { ssl: { rejectUnauthorized: false } } : {}),
+      }
+);
 
 pool.connect((err, client, release) => {
   if (err) {
     console.error('❌ Error al conectar con PostgreSQL:', err.stack);
   } else {
-    console.log('🟢 Conexión exitosa a PostgreSQL (switch_db)');
+    console.log('🟢 Conexión exitosa a PostgreSQL');
     release();
   }
 });

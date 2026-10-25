@@ -175,24 +175,33 @@ function limpiarPng(buffer) {
  */
 function sanitizarArchivo(ruta) {
   const original = fs.readFileSync(ruta);
-  const esPng = original.slice(0, 8).equals(PNG_FIRMA);
-  const limpio = esPng ? limpiarPng(original) : limpiarJpeg(original);
+  const resultado = sanitizarBuffer(original);
+  const limpio = resultado.buffer;
 
   if (limpio.length !== original.length) {
     fs.writeFileSync(ruta, limpio);
   }
 
+  const { buffer, ...resumen } = resultado;
+  return resumen;
+}
+
+function sanitizarBuffer(original) {
+  const esPng = original.slice(0, 8).equals(PNG_FIRMA);
+  const buffer = esPng ? limpiarPng(original) : limpiarJpeg(original);
   return {
     bytesAntes: original.length,
-    bytesDespues: limpio.length,
-    bytesEliminados: original.length - limpio.length,
+    bytesDespues: buffer.length,
+    bytesEliminados: original.length - buffer.length,
     formato: esPng ? 'PNG' : 'JPEG',
-    metadatosEliminados: limpio.length !== original.length,
+    metadatosEliminados: buffer.length !== original.length,
+    buffer,
   };
 }
 
 module.exports = {
   sanitizarArchivo,
+  sanitizarBuffer,
   limpiarJpeg,
   limpiarPng,
 };

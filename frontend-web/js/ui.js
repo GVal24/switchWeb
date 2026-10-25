@@ -6,6 +6,7 @@ const ICONOS = {
   home: '<path d="M3 10.5 12 3l9 7.5V21a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/>',
   search: '<circle cx="11" cy="11" r="7"/><path d="m16.5 16.5 4.5 4.5"/>',
   user: '<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6"/>',
+  flag: '<path d="M5 21V5"/><path d="M5 5c5-4 9 4 14 0v10c-5 4-9-4-14 0z" fill="currentColor"/>',
   help: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9.2a2.6 2.6 0 1 1 4.3 2c-.9.7-1.8 1.3-1.8 2.8"/><circle cx="12" cy="17.2" r=".8" fill="currentColor" stroke="none"/>',
   texto: '<path d="M5 6h14M12 6v13M8 19h8"/>',
   palette: '<path d="M12 3a9 9 0 1 0 0 18h1.2a2.4 2.4 0 0 0 0-4.8h-1a2 2 0 0 1 0-4h4.6A4.2 4.2 0 0 0 21 8c0-2.8-4-5-9-5z"/><circle cx="7.5" cy="10" r="1" fill="currentColor" stroke="none"/><circle cx="10" cy="7" r="1" fill="currentColor" stroke="none"/><circle cx="14" cy="6.8" r="1" fill="currentColor" stroke="none"/><circle cx="17" cy="9" r="1" fill="currentColor" stroke="none"/>',
@@ -416,6 +417,13 @@ export function urlImagen(valor) {
   if (url.startsWith('/')) {
     const api = window.SWITCH_CONFIG.apiBase;
     url = api.replace(/\/api$/, '') + url;
+  } else if (url.startsWith('http://') && window.location.protocol === 'https:') {
+    const api = new URL(window.SWITCH_CONFIG.apiBase, window.location.href);
+    const imagen = new URL(url);
+    if (imagen.host === api.host) {
+      imagen.protocol = 'https:';
+      url = imagen.href;
+    }
   }
   return url;
 }

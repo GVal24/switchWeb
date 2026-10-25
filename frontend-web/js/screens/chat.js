@@ -27,6 +27,7 @@ export async function render(contenedor, ctx) {
   const receptorId = ctx.params.receptorId;
   const nombre = ctx.query.get('nombre') || (String(receptorId).startsWith('inst_') ? 'Institución' : 'Vecino de Switch');
   const receptorEsUsuario =
+    !Store.suspendido &&
     /^\d+$/.test(String(receptorId)) &&
     Number(receptorId) !== Number(Store.usuario?.id);
   let mensajes = [];
@@ -40,16 +41,18 @@ export async function render(contenedor, ctx) {
       <div class="dueno-fila" style="margin-bottom:0.7rem">
         ${avatar(nombre, 'avatar-lg')}
         <div class="crece">
-          <p class="dueno-nombre">${esc(nombre)}</p>
+          <div class="dueno-nombre-fila">
+            <p class="dueno-nombre">${esc(nombre)}</p>
+            ${
+              receptorEsUsuario
+                ? `<button type="button" class="icon-btn reporte-usuario" data-reportar-usuario aria-label="Reportar a ${esc(
+                    nombre
+                  )}">${icon('flag')}</button>`
+                : ''
+            }
+          </div>
           <p class="texto-suave texto-chico">${icon('message')} Conversación de Switch</p>
         </div>
-        ${
-          receptorEsUsuario
-            ? `<button type="button" class="icon-btn" data-reportar-usuario aria-label="Reportar a ${esc(
-                nombre
-              )}">${icon('alert')}</button>`
-            : ''
-        }
       </div>
 
       ${

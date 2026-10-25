@@ -2,21 +2,30 @@ const db = require('../config/db');
 
 class ModeracionModel {
   /**
-   * Registra la imagen subida y el resultado del filtrado técnico.
+   * Registra los bytes de la imagen y el resultado del filtrado técnico.
    * La imagen queda siempre esperando decisión humana: `decision` NULL.
    */
-  static async registrar({ usuarioId, publicacionId = null, nombreArchivo, mimeDetectado, pesoBytes, evaluacion }) {
+  static async registrar({
+    usuarioId,
+    publicacionId = null,
+    nombreArchivo,
+    mimeDetectado,
+    pesoBytes,
+    datosImagen,
+    evaluacion,
+  }) {
     const query = `
       INSERT INTO moderacion_imagenes
-        (publicacion_id, usuario_id, nombre_archivo, mime_detectado, peso_bytes,
+        (publicacion_id, usuario_id, nombre_archivo, mime_detectado, peso_bytes, datos_imagen,
          filtro_estado, filtro_puntaje, filtro_motivos)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::jsonb)
       ON CONFLICT (nombre_archivo) DO UPDATE
         SET publicacion_id = EXCLUDED.publicacion_id,
+            datos_imagen   = EXCLUDED.datos_imagen,
             filtro_estado  = EXCLUDED.filtro_estado,
             filtro_puntaje = EXCLUDED.filtro_puntaje,
             filtro_motivos = EXCLUDED.filtro_motivos
-      RETURNING *;
+      RETURNING id;
     `;
     const result = await db.query(query, [
       publicacionId,
@@ -24,6 +33,7 @@ class ModeracionModel {
       nombreArchivo,
       mimeDetectado || null,
       pesoBytes || null,
+      datosImagen,
       evaluacion.filtroEstado,
       evaluacion.puntaje || 0,
       // La columna es JSONB: hay que enviar el texto del JSON. Si se pasa el
@@ -159,7 +169,12 @@ class ModeracionModel {
 
   static async obtenerPorId(id) {
     const query = `
-      SELECT m.*, p.titulo, p.estado AS publicacion_estado
+      SELECT
+        m.id, m.publicacion_id, m.usuario_id, m.nombre_archivo,
+        m.mime_detectado, m.peso_bytes, m.filtro_estado, m.filtro_puntaje,
+        m.filtro_motivos, m.revisado_por, m.revisado_en, m.decision,
+        m.motivo_rechazo, m.contiene_menor, m.creado_en,
+        p.titulo, p.estado AS publicacion_estado
       FROM moderacion_imagenes m
       LEFT JOIN publicaciones_p2p p ON p.id = m.publicacion_id
       WHERE m.id = $1;
@@ -211,7 +226,8 @@ class ModeracionModel {
              motivo_rechazo = $3,
              contiene_menor = $4
          WHERE id = $5 AND decision IS NULL
-         RETURNING *;`,
+         RETURNING id, publicacion_id, usuario_id, nombre_archivo,
+                   filtro_motivos, decision;`,
         [revisadoPor, decision, motivoRechazo, contieneMenor, moderacionId]
       );
 
@@ -290,51 +306,51 @@ class ModeracionModel {
     return result.rows[0];
   }
 
-  /**
-   * Devuelve el nombre del archivo en disco de una imagen, para poder
-   * borrarlo cuando la persona moderadora la rechaza.
-   */
-  static async obtenerArchivo(moderacionId) {
+  /** Devuelve los bytes de una imagen pendiente para moderación. */
+  static async obtenerImagenRevision(moderacionId) {
     const result = await db.query(
-      'SELECT nombre_archivo FROM moderacion_imagenes WHERE id = $1',
+      `SELECT mime_detectado, datos_imagen
+       FROM moderacion_imagenes
+       WHERE id = $1 AND decision IS NULL`,
       [moderacionId]
     );
-    return result.rows[0]?.nombre_archivo || null;
+    return result.rows[0] || null;
   }
 
-  /**
-   * Deja una decisión sin aplicar, para poder corregir un error sin dejar el
-   * registro en un estado que no ocurrió. Se usa cuando la base ya dijo
-   * "aprobada" pero el archivo no llegó a la carpeta pública.
-   */
-  static async reabrir(moderacionId) {
-    await db.query(
+  static async obtenerPendiente(moderacionId) {
+    const result = await db.query(
+      `SELECT id, nombre_archivo, mime_detectado,
+              datos_imagen IS NOT NULL AS imagen_disponible
+       FROM moderacion_imagenes
+       WHERE id = $1 AND decision IS NULL`,
+      [moderacionId]
+    );
+    return result.rows[0] || null;
+  }
+
+  static async obtenerImagenPublica(nombreArchivo) {
+    const result = await db.query(
+      `SELECT m.datos_imagen, m.mime_detectado
+       FROM moderacion_imagenes m
+       JOIN publicaciones_p2p p ON p.id = m.publicacion_id
+       WHERE m.nombre_archivo = $1
+         AND m.decision = 'APROBADA'
+         AND p.estado = 'Activo'
+         AND m.datos_imagen IS NOT NULL
+         AND m.mime_detectado IS NOT NULL`,
+      [nombreArchivo]
+    );
+    return result.rows[0] || null;
+  }
+
+  static async eliminarImagen(moderacionId) {
+    const result = await db.query(
       `UPDATE moderacion_imagenes
-       SET decision = NULL, revisado_por = NULL, revisado_en = NULL
-       WHERE id = $1`,
+       SET datos_imagen = NULL
+       WHERE id = $1 AND datos_imagen IS NOT NULL`,
       [moderacionId]
     );
-    await db.query(
-      `UPDATE publicaciones_p2p
-       SET estado = 'PENDIENTE_REVISION'
-       WHERE id = (SELECT publicacion_id FROM moderacion_imagenes WHERE id = $1)`,
-      [moderacionId]
-    );
-  }
-
-  /**
-   * Cuando la imagen se aprueba, la publicación pasa a apuntar a la URL real
-   * (la que ya no está en cuarentena). Antes guardaba la URL de espera, que
-   * deliberadamente no abre nada.
-   */
-  static async actualizarUrlPublicacion({ publicacionId, nombreArchivo }) {
-    if (!publicacionId) return;
-    await db.query(
-      `UPDATE publicaciones_p2p
-       SET imagen_url = REPLACE(imagen_url, '/_cuarena/', '/')
-       WHERE id = $1 AND imagen_url LIKE '%/_cuarena/%'`,
-      [publicacionId]
-    );
+    return result.rowCount > 0;
   }
 
   /**

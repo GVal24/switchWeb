@@ -31,6 +31,7 @@ router.post('/auth/login', authController.loginUsuario);
 
 // Rutas de Restablecimiento de Contraseña (públicas)
 router.post('/auth/password-reset', authController.solicitarResetPassword);
+router.post('/auth/password-reset/verificar', authController.verificarCodigoResetPassword);
 router.post('/auth/password-reset/confirm', authController.confirmarResetPassword);
 
 // Rutas de Instituciones y Cupos de Necesidad (lectura pública)
@@ -41,6 +42,7 @@ router.post('/validaciones/qr-scan', requerirSesion, requiereCuentaHabilitada, i
 
 // Rutas del Catálogo P2P (lectura pública, escritura con sesión)
 router.get('/catalogo', p2pController.listarCatálogoP2P);
+router.get('/catalogo/imagenes/:nombreArchivo', p2pController.verImagenPublicada);
 router.get('/catalogo/mis-publicaciones', requerirSesion, p2pController.listarMisPublicaciones);
 router.post('/catalogo/clasificar-esfuerzo', p2pController.previsualizarEsfuerzo);
 router.post('/catalogo/imagen', requerirSesion, requiereCuentaHabilitada, p2pController.subirImagenMiddleware.single('imagen'), p2pController.subirImagen);

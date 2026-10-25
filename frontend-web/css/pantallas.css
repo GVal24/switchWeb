@@ -536,6 +536,23 @@ html[data-paleta="suave"] .pub-imagen-icono .icono {
   font-size: 0.9rem;
 }
 
+.dueno-nombre-fila {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.reporte-usuario {
+  width: 1.9rem;
+  height: 1.9rem;
+  color: var(--rojo);
+}
+
+.reporte-usuario .icono {
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
 .dueno-meta {
   display: flex;
   align-items: center;

@@ -35,6 +35,10 @@ class AuthService {
       throw new ValidationError('El comprobante de verificación no corresponde a un OTP.');
     }
 
+    if (payload.propositoOtp && payload.propositoOtp !== 'REGISTRO') {
+      throw new ValidationError('El código verificado no corresponde a un registro.');
+    }
+
     if (normalizarTelefono(telefonoEsperado) !== payload.telefono) {
       throw new ValidationError(
         'El teléfono verificado no coincide con el que estás registrando.'

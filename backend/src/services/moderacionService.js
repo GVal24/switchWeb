@@ -32,10 +32,10 @@
 const fs = require('fs');
 const path = require('path');
 
-const { sanitizarArchivo } = require('../utils/sanitizarImagen');
+const { sanitizarBuffer } = require('../utils/sanitizarImagen');
+const almacen = require('./almacenImagenes');
 
-// backend/src/services -> backend/uploads (misma carpeta que usa p2pController)
-const UPLOADS_DIR = path.resolve(__dirname, '../../uploads');
+const UPLOADS_DIR = almacen.DIR_UPLOADS;
 
 const LIMITE_PESO_BYTES = 10 * 1024 * 1024;
 const DIMENSION_MINIMA = 100;
@@ -214,7 +214,8 @@ const moderadorTecnico = {
     //    bloque EXIF (que suele traer GPS y modelo de cámara); en PNG son los
     //    chunks de texto. No se mezclan los nombres porque la moderatora
     //    necesita saber qué se eliminó.
-    const limpieza = sanitizarArchivo(path.join(UPLOADS_DIR, nombreArchivo));
+    const limpieza = sanitizarBuffer(buffer);
+    const { buffer: datosImagen, ...resumenLimpieza } = limpieza;
     if (limpieza.metadatosEliminados) {
       motivos.push(
         limpieza.formato === 'PNG'
@@ -240,7 +241,8 @@ const moderadorTecnico = {
       formatoDetectado: formato.nombre,
       mimeDetectado: formato.mime,
       dimensiones,
-      limpieza,
+      limpieza: resumenLimpieza,
+      datosImagen,
     };
   },
 };
@@ -256,13 +258,13 @@ const MODERADORES = [moderadorTecnico];
  * Ejecuta todos los moderadores sobre una imagen ya subida.
  * Siempre deja la decisión final en manos de revisión humana.
  */
-function evaluarImagen(nombreArchivo) {
-  const ruta = path.join(UPLOADS_DIR, nombreArchivo);
-  const buffer = fs.readFileSync(ruta);
+function evaluarImagen(imagen) {
+  const ruta = Buffer.isBuffer(imagen) ? null : path.join(UPLOADS_DIR, imagen);
+  const buffer = Buffer.isBuffer(imagen) ? imagen : fs.readFileSync(ruta);
 
   const resultados = MODERADORES.map((m) => {
     try {
-      return m.revisar({ buffer, nombreArchivo, ruta });
+      return m.revisar({ buffer });
     } catch (err) {
       return {
         aprobado: false,
@@ -277,6 +279,11 @@ function evaluarImagen(nombreArchivo) {
   const puntaje = Math.max(0, ...resultados.map((r) => r.puntaje || 0));
   const motivos = resultados.flatMap((r) => r.motivos || []);
   const principal = resultados.find((r) => !r.aprobado)?.motivoPrincipal || null;
+  const imagenLimpia = resultados[0]?.datosImagen || buffer;
+
+  if (ruta && !imagenLimpia.equals(buffer)) {
+    fs.writeFileSync(ruta, imagenLimpia);
+  }
 
   return {
     // Aunque el filtro técnico lo apruebe, la imagen va a revisión humana.
@@ -289,7 +296,8 @@ function evaluarImagen(nombreArchivo) {
     motivos,
     motivoPrincipal: principal,
     resultados,
-    bytes: buffer.length,
+    bytes: imagenLimpia.length,
+    datosImagen: imagenLimpia,
   };
 }
 

@@ -1,5 +1,7 @@
 const db = require('../config/db');
 const { calcularImpacto } = require('../utils/gamificacion');
+const crypto = require('crypto');
+const { ValidationError } = require('../utils/customErrors');
 
 class UsuarioModel {
   /**
@@ -375,18 +377,25 @@ class UsuarioModel {
   }
 
 
-  /**
-   * Solicita un restablecimiento de contraseña.
-   * Genera un token único, lo guarda en la base de datos y lo devuelve al solicitante.
-   * El token vence en 1 hora.
-   */
-  static async solicitarReset(dni) {
-    const query = `      UPDATE usuarios      SET        password_reset_token = $1,        password_reset_expires = $2      WHERE dni = $3      RETURNING id, dni, nombre, apellido;    `;
-    const token = require('crypto').randomBytes(32).toString('hex');
-    const expires = new Date(Date.now() + 3600000); // 1 hora
-    const result = await db.query(query, [token, expires, dni]);
-    if (result.rows[0]) return { token, expires, usuario: result.rows[0] };
-    return null;
+  static async obtenerTelefonoParaReset(dni) {
+    const result = await db.query(
+      `SELECT telefono FROM usuarios WHERE dni = $1 AND activo = TRUE LIMIT 1`,
+      [dni]
+    );
+    return result.rows[0]?.telefono || null;
+  }
+
+  static async crearTokenReset({ dni, telefono }) {
+    const token = crypto.randomBytes(32).toString('hex');
+    const expires = new Date(Date.now() + 15 * 60 * 1000);
+    const result = await db.query(
+      `UPDATE usuarios
+       SET password_reset_token = $1, password_reset_expires = $2
+       WHERE dni = $3 AND telefono = $4 AND activo = TRUE
+       RETURNING id`,
+      [token, expires, dni, telefono]
+    );
+    return result.rowCount ? { token, expires } : null;
   }
 
   /***
@@ -395,14 +404,20 @@ class UsuarioModel {
    */
   static async confirmarReset(token, nuevaPassword) {
     if (!token || !nuevaPassword || nuevaPassword.length < 6) {
-      throw new Error('Token o contraseña inválidos.');
+      throw new ValidationError('Token o contraseña inválidos.');
     }
-    const query = `      UPDATE usuarios      SET        password = $1,        password_reset_token = NULL,        password_reset_expires = NULL      WHERE password_reset_token = $2      RETURNING id, dni, nombre, apellido;    `;
+    const query = `
+      UPDATE usuarios
+      SET password = $1, password_reset_token = NULL, password_reset_expires = NULL
+      WHERE password_reset_token = $2
+        AND password_reset_expires > CURRENT_TIMESTAMP
+      RETURNING id, dni, nombre, apellido
+    `;
     const { hash } = require('bcrypt');
     const hashedPassword = await hash(nuevaPassword, 10);
     const result = await db.query(query, [hashedPassword, token]);
     if (!result.rows[0]) {
-      throw new Error('Token inválido o expirado.');
+      throw new ValidationError('El código de restablecimiento no es válido o venció.');
     }
     return result.rows[0];
   }

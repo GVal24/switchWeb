@@ -9,7 +9,10 @@
  * proveedor es mock. Con un proveedor real, jamás se expone por la API.
  */
 
-const esProduccion = process.env.NODE_ENV === 'production';
+const esProduccion =
+  process.env.NODE_ENV === 'production' ||
+  String(process.env.RENDER || '').toLowerCase() === 'true' ||
+  Boolean(process.env.RENDER_SERVICE_ID);
 
 const config = {
 

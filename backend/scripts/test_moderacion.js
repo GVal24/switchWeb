@@ -209,23 +209,15 @@ async function main() {
   // ---------------------------------------------------------
   console.log('\n[5] Flujo completo con la API');
   // ---------------------------------------------------------
-  const admin = await db.query("SELECT id, dni FROM usuarios WHERE rol = 'ADMIN' LIMIT 1");
+  const admin = await db.query("SELECT id FROM usuarios WHERE rol = 'ADMIN' LIMIT 1");
   const adminId = admin.rows[0].id;
-  const bcrypt = require('bcrypt');
-  const adminLogin = await pedir('POST', '/auth/login', {
-    dni: admin.rows[0].dni,
-    password: '123456',
-  });
-  // La contraseña del seed puede no ser 123456: se crea una sesión directa
-  // firmando un token, que es equivalente para probar autorización.
+  // Se firma un token para probar autorización sin depender de la contraseña del seed.
   const jwt = require('jsonwebtoken');
   const tokenAdmin = jwt.sign(
     { id: adminId, rol: 'ADMIN' },
     process.env.JWT_SECRET || 'switch_secreto_temporal',
     { expiresIn: '1h' }
   );
-  void adminLogin;
-  void bcrypt;
 
   const user = await crearUsuarioDePrueba('01');
   await darNexo(user.id);

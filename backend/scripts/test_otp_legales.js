@@ -9,7 +9,6 @@
 require('dotenv').config();
 const app = require('../src/index');
 const db = require('../src/config/db');
-const argonNoUsar = null; // placeholder
 
 let ok = 0;
 let fallos = 0;
@@ -305,10 +304,6 @@ async function main() {
   );
 
   // El código nunca se guarda en claro
-  const filaOtp = await db.query(
-    'SELECT codigo_hash FROM verificaciones_otp WHERE telefono = $1 ORDER BY id DESC LIMIT 1',
-    [codigo ? codigo : '']
-  );
   const codigosEnClaro = await db.query(
     'SELECT codigo_hash FROM verificaciones_otp'
   );
@@ -316,7 +311,6 @@ async function main() {
     'la tabla de OTP no guarda el código en claro',
     codigosEnClaro.rows.every((r) => /^[a-f0-9]{64}$/.test(r.codigo_hash))
   );
-  void filaOtp;
 
   // ---------------------------------------------------------
   console.log('\n[6] Limpieza');

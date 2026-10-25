@@ -4,7 +4,6 @@
  */
 require('dotenv').config();
 const fs = require('fs');
-const path = require('path');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 
@@ -77,4 +76,3 @@ db.query = async (texto, params) => {
   await db.pool.end();
   process.exit(1);
 });
-void path;
