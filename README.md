@@ -12,7 +12,7 @@ Este repositorio contiene la **versión web progresiva (PWA)** de Switch, que se
 
 ## 📸 Capturas
 
-> Las imágenes de `docs/screenshots/` son de la app móvil original. Se reemplazarán por capturas de la versión web cuando esté publicada.
+> Capturas ilustrativas de funcionalidades del proyecto; la interfaz web puede diferir.
 
 | Voluntariado | Catálogo P2P | Perfil e insignias |
 |:---:|:---:|:---:|
@@ -34,7 +34,7 @@ Este repositorio contiene la **versión web progresiva (PWA)** de Switch, que se
 | Autenticación | JWT (JSON Web Tokens) + bcrypt |
 | Archivos | Multer (subida de imágenes) |
 | QR / Geolocalización | Lectura de QR en el navegador (`BarcodeDetector`) + `geolocation` |
-| Despliegue | Web en **Vercel**, backend en **Render**, base de datos en **Neon** |
+| Despliegue actual | Aplicación web y API en **Render**, base de datos en **Neon** |
 
 ### Características de la PWA
 
@@ -60,7 +60,7 @@ Este repositorio contiene la **versión web progresiva (PWA)** de Switch, que se
 
 ```
 switchWeb/
-├── frontend-web/              # La PWA (lo que se publica en Vercel)
+├── frontend-web/              # Aplicación web progresiva (PWA)
 │   ├── index.html             # Estructura base
 │   ├── manifest.webmanifest   # Configuración de la PWA instalable
 │   ├── sw.js                  # Service worker (cache / offline)
@@ -74,7 +74,7 @@ switchWeb/
 │       ├── ui.js              # Componentes e íconos
 │       ├── router.js          # Enrutador por hash
 │       └── screens/           # Pantallas (públicas y admin/)
-├── backend/                   # API REST (lo que se publica en Render)
+├── backend/                   # API REST y servidor de la aplicación web
 │   ├── src/
 │   │   ├── config/            # Conexión a PostgreSQL
 │   │   ├── controllers/       # Capa HTTP
@@ -91,7 +91,7 @@ switchWeb/
 └── diagramas_mermaid_srs.md   # UML del sistema
 ```
 
-El backend también sirve la PWA en `/app/` cuando se ejecuta en el mismo servidor, así que puede usarse **todo junto en Render** sin necesidad de Vercel.
+El backend sirve la PWA en `/app/`, por lo que la aplicación web y la API pueden publicarse juntas en un único servicio.
 
 ---
 
@@ -99,7 +99,7 @@ El backend también sirve la PWA en `/app/` cuando se ejecuta en el mismo servid
 
 ### Requisitos
 
-- Node.js 18+
+- Node.js 20
 - PostgreSQL 14+ (local, o una base en Neon)
 
 ### 1. Base de datos
@@ -112,7 +112,7 @@ psql -U postgres -d switch_db -f schema.sql
 psql -U postgres -d switch_db -f seed.sql
 ```
 
-O cargá `schema.sql` y luego `seed.sql` en el editor SQL de Neon (en ese orden).
+En Neon, ejecutá `schema.sql` desde el editor SQL. Usá `seed.sql` sólo en una base descartable para cargar datos de demostración: vacía las tablas antes de insertar los ejemplos.
 
 ### 2. Backend
 
@@ -122,7 +122,7 @@ npm install
 npm run dev     # o: npm start
 ```
 
-La configuración usa los mismos nombres de variables en local y Render. En local, copiá `.env.example` como `.env` en la raíz del repositorio y completá los datos de tu PostgreSQL local. El backend detecta Render automáticamente: allí no carga el `.env` y usa las variables configuradas en **Environment** del servicio. Poné en Render los datos de Neon con esos mismos nombres (`DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `DB_PORT`) o configurá `DATABASE_URL` con la connection string de Neon. Así, el `.env` local no pisa las credenciales de producción.
+En local, copiá `.env.example` como `.env` en la raíz del repositorio y completá los datos de tu PostgreSQL local. En Render, configurá las variables del servicio con los datos de Neon (`DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `DB_PORT`) o usá `DATABASE_URL`. El backend detecta Render y no carga el `.env` local.
 
 ```env
 PORT=3000
@@ -132,15 +132,15 @@ DB_HOST=localhost
 DB_PORT=5432
 DB_NAME=switch_db
 DB_SSL=false
-# Alternativa para Render: DATABASE_URL=postgresql://...Neon...
+# Alternativa: DATABASE_URL con la cadena de conexión de PostgreSQL
 JWT_SECRET=una_clave_larga_y_secreta
 OTP_PROVEEDOR=MOCK
 OTP_HMAC_SECRET=una_clave_larga_para_otp
 GPS_VALIDACION_ACTIVA=false
-ORIGENES_PERMITIDOS=       # vacío = permite cualquier origen (local)
+ORIGENES_PERMITIDOS=       # opcional; restringe CORS si la web se sirve desde otro origen
 ```
 
-La opción **Recuperarla** envía un código al teléfono registrado y permite cambiar la contraseña sin intervención administrativa. Para que funcione en Render, configurá un proveedor real de SMS o WhatsApp (`OTP_PROVEEDOR` y sus credenciales; por ejemplo `TWILIO_SMS`) y una clave `OTP_HMAC_SECRET` larga y secreta. `MOCK` es solo para desarrollo local. Los cambios necesarios de base de datos están incluidos en `schema.sql`.
+La opción **Recuperarla** permite cambiar la contraseña mediante un código enviado al teléfono registrado. Para enviar códigos reales, configurá un proveedor de SMS o WhatsApp y una clave `OTP_HMAC_SECRET` secreta. `MOCK` es para desarrollo local. Los cambios necesarios de base de datos están incluidos en `schema.sql`.
 
 ### 3. Web
 
@@ -161,69 +161,31 @@ node scripts/generarQrs.js   # guarda los PNG en backend/qrs_instituciones/
 
 ---
 
-## Despliegue en la nube
+## Despliegue
 
-El sistema se reparte en tres servicios:
+La aplicación web y la API se ejecutan en Render; Neon aloja PostgreSQL:
 
 ```
-   ┌─────────┐     ┌──────────────┐     ┌───────────┐
-   │  Vercel │────▶│    Render    │────▶│   Neon    │
-   │  (web)  │ API │  (backend)   │ SQL │ (base de  │
-   │         │     │              │     │  datos)   │
-   └─────────┘     └──────────────┘     └───────────┘
+   ┌─────────────────────────────┐     ┌───────────┐
+   │           Render            │────▶│   Neon    │
+   │   PWA (/app/) + API (/api)  │ SQL │ PostgreSQL│
+   └─────────────────────────────┘     └───────────┘
 ```
 
 ### 1. Base de datos (Neon)
 
 1. Crear un proyecto en [neon.tech](https://neon.tech) y copiar la cadena de conexión.
-2. En el **SQL Editor**, ejecutar `schema.sql`. Incluye la estructura completa y las actualizaciones; se puede volver a ejecutar sobre una base existente sin borrar sus datos.
-3. Ejecutar `seed.sql` sólo si querés cargar los datos de demostración en una base descartable: ese archivo vacía las tablas antes de insertar los ejemplos.
+2. En el **SQL Editor**, ejecutar `schema.sql`. Incluye la estructura y las actualizaciones; se puede volver a ejecutar sobre una base existente sin borrar sus datos.
+3. Ejecutar `seed.sql` sólo en una base descartable para cargar datos de demostración. Este archivo vacía las tablas antes de insertar los ejemplos.
 
 ### 2. Backend (Render)
 
 1. Crear un **Web Service** apuntando a este repositorio.
 2. **Root Directory:** `backend`
 3. **Build Command:** `npm install`  ·  **Start Command:** `npm start`
-4. Cargar las variables de entorno (las de Neon + `JWT_SECRET` + `ORIGENES_PERMITIDOS`).
+4. Cargar las variables de entorno de Neon y las claves secretas de la aplicación.
 
-Las imágenes nuevas se guardan como `BYTEA` en Neon, por lo que sobreviven los reinicios y despliegues de Render sin necesitar un disco persistente. Las imágenes quedan en cuarentena y recién se muestran en el catálogo cuando una persona administradora las aprueba. Las fotos subidas antes de este cambio no se recuperan automáticamente si Render ya eliminó el almacenamiento efímero. Considerá el espacio de base de datos disponible en tu plan de Neon: las fotos consumen ese espacio.
-
-### 3. Web (Vercel)
-
-1. Importar el repositorio en [vercel.com](https://vercel.com).
-2. **Root Directory:** `frontend-web`
-3. En `frontend-web/index.html`, descomentar y completar la línea que apunta al backend:
-
-```html
-<script>window.SWITCH_API_URL = 'https://TU-BACKEND.onrender.com/api';</script>
-```
-
-4. Copiar la URL de Vercel y agregarla a `ORIGENES_PERMITIDOS` en Render.
-
-> Alternativa más simple: usar **solo Render** (sin Vercel). El backend sirve la web en `https://TU-BACKEND.onrender.com/app/`.
-
----
-
-## Usuarios del seed
-
-Todos los vecinos y delegados comparten la contraseña `clave123`; el administrador tiene la suya.
-
-| ID | Rol | DNI | Nombre | Contraseña |
-|---|---|---|---|---|
-| 1 | Vecina (nivel 2) | `38450912` | Guillermina Valdez | `clave123` |
-| 2 | Vecino | `35123456` | Carlos Rodríguez | `clave123` |
-| 3 | Delegada | `28999888` | María Gómez | `clave123` |
-| 4 | Administrador | `11111111` | Admin Switch | `Switch2024!` |
-| 5 | Vecina | `31222444` | Laura Fernández | `clave123` |
-| 6 | Vecino | `27333455` | Diego Martínez | `clave123` |
-| 7 | Delegada | `29888777` | Sofía López | `clave123` |
-| 8 | Vecino | `33555666` | Martín Pérez | `clave123` |
-| 9 | Vecina | `34119988` | Valentina Sosa | `clave123` |
-| 10 | Vecino | `30888999` | Joaquín Romero | `clave123` |
-| 11 | Vecina | `35555667` | Camila Díaz | `clave123` |
-| 12 | Delegado | `31888999` | Nicolás Álvarez | `clave123` |
-
-Los hashes QR de las instituciones del seed están en `seed.sql`.
+Las imágenes nuevas se guardan en Neon para que persistan entre reinicios y despliegues, sin depender de un disco persistente en Render. Quedan pendientes de revisión y sólo se muestran en el catálogo después de que una persona administradora las aprueba. Las imágenes anteriores no se recuperan si el almacenamiento temporal donde estaban ya fue eliminado. Las imágenes nuevas consumen espacio de la base de datos.
 
 ---
 
