@@ -14,6 +14,7 @@ import {
   hora,
 } from '../ui.js';
 import { navegar } from '../router.js';
+import { reportarUsuario } from '../reportes.js';
 
 export async function render(contenedor, ctx) {
   if (!Store.sesionActiva) {
@@ -25,6 +26,9 @@ export async function render(contenedor, ctx) {
 
   const receptorId = ctx.params.receptorId;
   const nombre = ctx.query.get('nombre') || (String(receptorId).startsWith('inst_') ? 'Institución' : 'Vecino de Switch');
+  const receptorEsUsuario =
+    /^\d+$/.test(String(receptorId)) &&
+    Number(receptorId) !== Number(Store.usuario?.id);
   let mensajes = [];
   let carga = 0;
   let enviando = false;
@@ -39,6 +43,13 @@ export async function render(contenedor, ctx) {
           <p class="dueno-nombre">${esc(nombre)}</p>
           <p class="texto-suave texto-chico">${icon('message')} Conversación de Switch</p>
         </div>
+        ${
+          receptorEsUsuario
+            ? `<button type="button" class="icon-btn" data-reportar-usuario aria-label="Reportar a ${esc(
+                nombre
+              )}">${icon('alert')}</button>`
+            : ''
+        }
       </div>
 
       ${
@@ -65,6 +76,10 @@ export async function render(contenedor, ctx) {
   const texto = contenedor.querySelector('#chat-texto');
   const enviar = contenedor.querySelector('#chat-enviar');
   const ayuda = contenedor.querySelector('#chat-ayuda');
+
+  contenedor.querySelector('[data-reportar-usuario]')?.addEventListener('click', () =>
+    reportarUsuario(receptorId, nombre)
+  );
 
   if (Store.suspendido) {
     ayuda.hidden = true;

@@ -23,6 +23,7 @@ import {
   cargarBoton,
 } from '../ui.js';
 import { navegar } from '../router.js';
+import { reportarUsuario } from '../reportes.js';
 
 const EXPLICACION = {
   SIMPLE: 'Poco traslado y dedicación. Ideal para empezar a intercambiar.',
@@ -128,6 +129,13 @@ export async function render(contenedor, ctx) {
               }
             </div>
           </div>
+          ${
+            Store.sesionActiva && !Store.suspendido && !esMia && duenoId
+              ? `<button type="button" class="icon-btn" data-reportar-usuario aria-label="Reportar a ${esc(
+                  dueno
+                )}">${icon('alert')}</button>`
+              : ''
+          }
         </div>
       </div>
 
@@ -148,6 +156,9 @@ export async function render(contenedor, ctx) {
     e.stopPropagation();
     if (duenoId) navegar(`/usuario/${encodeURIComponent(duenoId)}`);
   });
+  contenedor.querySelector('[data-reportar-usuario]')?.addEventListener('click', () =>
+    reportarUsuario(duenoId, dueno)
+  );
 
   if (esMia) {
     aviso.innerHTML = `<div class="banner banner-info">${icon('info')}<div><strong>Esta publicación es tuya</strong><p>No podés proponerte un trueque a vos mismo. Podés ver el estado de tus intercambios.</p></div></div>`;

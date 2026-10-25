@@ -526,7 +526,6 @@ export async function render(contenedor) {
               class="pub-dueno"
               data-ver-usuario="${esc(uid ?? '')}"
               style="border:0;background:none;padding:0;text-align:left;cursor:pointer"
-              title="Ver perfil de ${esc(nombreUsuario)}"
             >
               ${avatar(nombreUsuario)}
               <span>${esc(nombreUsuario)}</span>
