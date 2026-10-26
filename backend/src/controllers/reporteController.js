@@ -5,10 +5,10 @@ const UsuarioModel = require('../models/usuarioModel');
 
 /**
  * POST /api/reportes
- * Body: { reportanteId, reportanteNombre?, reportadoId, reportadoNombre?, motivo }
+ * Body: { reportadoId, reportadoNombre?, motivo }
  */
 const reportarUsuario = asyncWrapper(async (req, res) => {
-  const { reportanteNombre, reportadoId, reportadoNombre, motivo } = req.body;
+  const { reportadoId, reportadoNombre, motivo } = req.body;
   // El reportante siempre es el usuario de la sesión (no se confía en el body)
   const reportanteId = req.usuario.id;
 
@@ -19,7 +19,6 @@ const reportarUsuario = asyncWrapper(async (req, res) => {
 
   await ReporteModel.crear({
     reportanteId,
-    reportanteNombre,
     reportadoId,
     reportadoNombre,
     motivo: String(motivo).trim()

@@ -11,14 +11,14 @@
  *  - que el contador de pendientes baje al responder
  *  - que se rechace el texto vacío y el mensaje demasiado largo
  *
- * Ejecutar con: node backend/scripts/test_bloqueos_contacto.js
+ * Ejecutar desde la raíz con: node backend/test/integration-manual/test_bloqueos_contacto.js
  */
 require('dotenv').config();
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 
-const app = require('../src/index');
-const db = require('../src/config/db');
+const app = require('../../src/index');
+const db = require('../../src/config/db');
 
 let ok = 0;
 let fallos = 0;

@@ -9,7 +9,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const DIR = path.resolve(__dirname, '../uploads');
+const DIR = path.resolve(__dirname, '../../uploads');
 if (!fs.existsSync(DIR)) fs.mkdirSync(DIR, { recursive: true });
 
 /** JPEG mínimo válido 1x1 (gris) en base64. */

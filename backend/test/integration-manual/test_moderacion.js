@@ -1,27 +1,25 @@
 /**
  * Pruebas del filtro de imágenes y de la cola de moderación.
  *
- * Verifica sobre archivos reales:
+ * Verifica con archivos de prueba:
  *  - que se limpien los metadatos EXIF/GPS (y que se detecten antes)
  *  - que el formato se detecte por los bytes y no por el nombre
+ *  - que las imágenes se guarden en PostgreSQL y respeten la moderación
  *  - que una publicación nueva nunca nazca visible
  *  - que aprobar y rechaza hagan lo que corresponde
  *  - que el hallazgo de un menor suspenda la cuenta
  *
- * Ejecutar con: node backend/scripts/test_moderacion.js
+ * Ejecutar desde la raíz con: node backend/test/integration-manual/test_moderacion.js
  */
 require('dotenv').config();
 const fs = require('fs');
 const path = require('path');
 
-const app = require('../src/index');
-const db = require('../src/config/db');
-const moderacion = require('../src/services/moderacionService');
-const almacen = require('../src/services/almacenImagenes');
-const { sanitizarArchivo } = require('../src/utils/sanitizarImagen');
-const { generarArchivos, limpiar } = require('./generarImagenesPrueba');
-
-const UPLOADS = path.resolve(__dirname, '../uploads');
+const app = require('../../src/index');
+const db = require('../../src/config/db');
+const moderacion = require('../../src/services/moderacionService');
+const { sanitizarArchivo } = require('../../src/utils/sanitizarImagen');
+const { generarArchivos, limpiar } = require('../fixtures/generarImagenesPrueba');
 
 let ok = 0;
 let fallos = 0;
@@ -38,8 +36,6 @@ function afirmar(desc, cond, extra) {
 let servidor;
 let url;
 let archivos;
-/** Copias que guardó el servidor, con nombres pub_<usuario>_<ts>.<ext>. */
-const archivosServidor = [];
 const creados = [];
 
 async function pedir(metodo, ruta, cuerpo, token) {
@@ -58,7 +54,7 @@ async function pedir(metodo, ruta, cuerpo, token) {
   return { status: res.status, json };
 }
 
-/** Sube un archivo real usando FormData nativo de Node 18+. */
+/** Sube un archivo de prueba usando FormData nativo de Node 20+. */
 async function subir(nombreRuta, token, mime = 'image/jpeg') {
   const datos = fs.readFileSync(nombreRuta);
   const form = new FormData();
@@ -72,9 +68,6 @@ async function subir(nombreRuta, token, mime = 'image/jpeg') {
   try {
     json = await res.json();
   } catch (_) {}
-  // El servidor guarda la copia con otro nombre (pub_<usuario>_<ts>.<ext>).
-  // Se anotan para poder borrarlas al terminar.
-  if (json?.datos?.nombreArchivo) archivosServidor.push(json.datos.nombreArchivo);
   return { status: res.status, json };
 }
 
@@ -240,40 +233,41 @@ async function main() {
   // ---------------------------------------------------------
   console.log('\n[6] La imagen pendiente NO es pública');
   // ---------------------------------------------------------
-  const rutaCuarena = path.join(UPLOADS, '_cuarena', nombreImagen);
-
-  afirmar(
-    'el archivo queda guardado en la carpeta de cuarentena',
-    fs.existsSync(rutaCuarena)
-  );
-  afirmar(
-    'NO queda en la carpeta pública',
-    !fs.existsSync(path.join(UPLOADS, nombreImagen))
-  );
-
   const urlDevuelta = subida.json?.datos?.url;
+  const urlImagen = `/api/catalogo/imagenes/${encodeURIComponent(nombreImagen)}`;
   afirmar(
-    'la URL devuelta apunta a la cuarentena',
-    String(urlDevuelta).includes('/uploads/_cuarena/'),
-    urlDevuelta
+    'la URL apunta al endpoint de imágenes del catálogo',
+    urlDevuelta === urlImagen,
+    { esperada: urlImagen, recibida: urlDevuelta }
   );
 
-  // Con la ruta que devuelve la API, cualquiera sin sesión NO puede verla.
-  const rutaRelativa = String(urlDevuelta).split('/uploads')[1];
-  const accesoAnonimo = await fetch(`${url}/uploads${rutaRelativa}`);
-  afirmar('sin sesión la imagen NO se puede descargar', accesoAnonimo.status === 404, accesoAnonimo.status);
+  const guardada = await db.query(
+    `SELECT datos_imagen, mime_detectado, decision
+     FROM moderacion_imagenes WHERE nombre_archivo = $1`,
+    [nombreImagen]
+  );
+  const bytesGuardados = guardada.rows[0]?.datos_imagen;
+  afirmar('los bytes de la imagen se guardan en PostgreSQL', Buffer.isBuffer(bytesGuardados));
+  afirmar(
+    'se guarda el tipo MIME detectado',
+    guardada.rows[0]?.mime_detectado === 'image/jpeg'
+  );
+  afirmar(
+    'la imagen recién subida aún no tiene decisión',
+    guardada.rows[0]?.decision === null
+  );
 
-  const accesoConductor = await fetch(`${url}/uploads${rutaRelativa}`, {
+  const accesoAnonimo = await fetch(`${url}${urlImagen}`);
+  afirmar('sin sesión la imagen pendiente no está disponible', accesoAnonimo.status === 404, accesoAnonimo.status);
+
+  const accesoConductor = await fetch(`${url}${urlImagen}`, {
     headers: { Authorization: `Bearer ${tokenUser}` },
   });
   afirmar(
-    'ni siquiera quien la subió puede verla por la URL pública',
+    'quien la subió tampoco puede verla antes de su aprobación',
     accesoConductor.status === 404,
     accesoConductor.status
   );
-
-  const listado = await fetch(`${url}/uploads/`);
-  afirmar('no se puede listar la carpeta de cuarentena', listado.status === 404, listado.status);
 
   const nueva = await pedir(
     'POST',
@@ -282,7 +276,7 @@ async function main() {
       titulo: 'Silla de madera',
       descripcion: 'Silla en buen estado, se entrega en la institución.',
       tipoItem: 'OBJETO',
-      imagenUrl: `http://x/uploads/${nombreImagen}`,
+      imagenUrl: urlDevuelta,
       nombreArchivoImagen: nombreImagen,
     },
     tokenUser
@@ -309,6 +303,11 @@ async function main() {
     (i) => i.publicacion_id === publicacionId
   );
   afirmar('la imagen aparece en la cola de moderación', !!enCola);
+  afirmar(
+    'la cola usa el endpoint protegido de moderación',
+    enCola?.url_para_moderar === `/api/admin/moderacion/${enCola?.id}/imagen`,
+    enCola?.url_para_moderar
+  );
   afirmar('la cola trae el contexto de la publicación', enCola?.titulo === 'Silla de madera', enCola?.titulo);
   afirmar('la cola trae el autor', !!enCola?.autor_nombre, enCola?.autor_nombre);
 
@@ -320,10 +319,10 @@ async function main() {
   const verSinPermiso = await fetch(`${url}/api/admin/moderacion/${enCola.id}/imagen`, {
     headers: { Authorization: `Bearer ${tokenUser}` },
   });
-  afirmar('un usuario común no puede ver la imagen en cuarentena', verSinPermiso.status === 403, verSinPermiso.status);
+  afirmar('un usuario común no puede ver la imagen pendiente', verSinPermiso.status === 403, verSinPermiso.status);
 
   const verAnonimo = await fetch(`${url}/api/admin/moderacion/${enCola.id}/imagen`);
-  afirmar('sin sesión tampoco se puede ver la imagen en cuarentena', verAnonimo.status === 401, verAnonimo.status);
+  afirmar('sin sesión tampoco se puede ver la imagen pendiente', verAnonimo.status === 401, verAnonimo.status);
 
   const verComoAdmin = await fetch(`${url}/api/admin/moderacion/${enCola.id}/imagen`, {
     headers: { Authorization: `Bearer ${tokenAdmin}` },
@@ -340,18 +339,13 @@ async function main() {
   );
   afirmar('aprobar responde 200', aprobar.status === 200, aprobar.json);
 
-  // Recién ahora la imagen pasa a la carpeta pública.
+  const accesoPublico = await fetch(`${url}${urlImagen}`);
+  const bytesPublicos = Buffer.from(await accesoPublico.arrayBuffer());
+  afirmar('aprobada, la imagen ya está disponible', accesoPublico.status === 200, accesoPublico.status);
   afirmar(
-    'al aprobar, el archivo sale de la cuarentena',
-    fs.existsSync(path.join(UPLOADS, nombreImagen))
+    'la imagen aprobada se sirve desde los bytes guardados en PostgreSQL',
+    Buffer.isBuffer(bytesGuardados) && bytesPublicos.equals(bytesGuardados)
   );
-  afirmar(
-    'y deja de estar en la carpeta de cuarentena',
-    !fs.existsSync(rutaCuarena)
-  );
-
-  const accesoPublico = await fetch(`${url}/uploads/${nombreImagen}`);
-  afirmar('aprobada, la imagen ya es pública', accesoPublico.status === 200, accesoPublico.status);
 
   const catalogo2 = await pedir('GET', '/catalogo');
   afirmar(
@@ -359,8 +353,8 @@ async function main() {
     JSON.stringify(catalogo2.json).includes('Silla de madera')
   );
   afirmar(
-    'y la publicación apunta a la URL pública, no a la de cuarentena',
-    !String(catalogo2.json).includes('/uploads/_cuarena/')
+    'la publicación apunta al endpoint persistente de imágenes',
+    JSON.stringify(catalogo2.json).includes(urlImagen)
   );
 
   // No se puede aprobar dos veces
@@ -382,7 +376,7 @@ async function main() {
       titulo: 'Pizarra',
       descripcion: 'Pizarra de corcho en buen estado.',
       tipoItem: 'OBJETO',
-      imagenUrl: `http://x/uploads/${nombre2}`,
+      imagenUrl: subida2.json?.datos?.url,
       nombreArchivoImagen: nombre2,
     },
     tokenUser
@@ -406,11 +400,19 @@ async function main() {
     tokenAdmin
   );
   afirmar('rechazar responde 200', rechazar.status === 200, rechazar.json);
-  afirmar('el archivo fue eliminado del servidor', rechazar.json?.datos?.archivoEliminado === true);
-  afirmar(
-    'la copia que el servidor guardó ya no existe en disco',
-    !fs.existsSync(path.join(require('path').resolve(__dirname, '../uploads'), nombre2))
+  afirmar('los bytes fueron eliminados de PostgreSQL', rechazar.json?.datos?.archivoEliminado === true);
+  const imagenRechazada = await db.query(
+    'SELECT datos_imagen FROM moderacion_imagenes WHERE nombre_archivo = $1',
+    [nombre2]
   );
+  afirmar(
+    'la imagen rechazada ya no conserva bytes en la base',
+    imagenRechazada.rows[0]?.datos_imagen === null
+  );
+  const accesoRechazada = await fetch(
+    `${url}/api/catalogo/imagenes/${encodeURIComponent(nombre2)}`
+  );
+  afirmar('la imagen rechazada no está disponible públicamente', accesoRechazada.status === 404);
 
   const estadoPub2 = await db.query('SELECT estado FROM publicaciones_p2p WHERE id = $1', [
     pub2Id,
@@ -427,7 +429,7 @@ async function main() {
       titulo: 'Juego de mesa',
       descripcion: 'Juego completo, muy lindo.',
       tipoItem: 'OBJETO',
-      imagenUrl: `http://x/uploads/${nombre3}`,
+      imagenUrl: subida3.json?.datos?.url,
       nombreArchivoImagen: nombre3,
     },
     tokenUser
@@ -459,13 +461,17 @@ async function main() {
     !!susp.rows[0].suspendido_hasta,
     susp.rows[0].suspendido_hasta
   );
-  afirmar(
-    'y el archivo sigue reservado, sin quedar accesible',
-    fs.existsSync(path.join(UPLOADS, '_cuarena', nombre3))
+  const imagenRetenida = await db.query(
+    'SELECT datos_imagen FROM moderacion_imagenes WHERE nombre_archivo = $1',
+    [nombre3]
   );
-  const urlTrasMenor = `${url}/uploads/_cuarena/${nombre3}`;
+  afirmar(
+    'los bytes del archivo quedan retenidos en PostgreSQL',
+    Buffer.isBuffer(imagenRetenida.rows[0]?.datos_imagen)
+  );
+  const urlTrasMenor = `${url}/api/catalogo/imagenes/${encodeURIComponent(nombre3)}`;
   const intentoDescarga = await fetch(urlTrasMenor);
-  afirmar('el archivo reservado tampoco se puede descargar por la web', intentoDescarga.status === 404, intentoDescarga.status);
+  afirmar('el archivo retenido tampoco se puede descargar por la web', intentoDescarga.status === 404, intentoDescarga.status);
 
   const stats = await pedir('GET', '/admin/moderacion/estadisticas', null, tokenAdmin);
   afirmar('las estadísticas responden 200', stats.status === 200);
@@ -609,7 +615,7 @@ async function main() {
       titulo: 'Ropa de invierno',
       descripcion: 'Abrigos y camperas para el frío.',
       tipoItem: 'OBJETO',
-      imagenUrl: `${url}/uploads/cualquiera.jpg`,
+      imagenUrl: `${url}/api/catalogo/imagenes/cualquiera.jpg`,
       nombreArchivoImagen: 'no_existe_este_archivo.jpg',
     },
     tokenUser2
@@ -624,16 +630,22 @@ async function main() {
       titulo: 'Mueble',
       descripcion: 'Mesa de madera para el comedor.',
       tipoItem: 'OBJETO',
-      imagenUrl: `${url}/uploads/cualquiera.jpg`,
+      imagenUrl: `${url}/api/catalogo/imagenes/cualquiera.jpg`,
     },
     tokenUser2
   );
   afirmar('mandar sólo una URL, sin nombre de archivo, se rechaza', urlSola.status === 400, urlSola.status);
 
   // Limpieza de la subida que no se llegó a usar.
-  await db.query('DELETE FROM moderacion_imagenes WHERE nombre_archivo = $1', [nombreAjeno]);
-  almacen.eliminarArchivo(nombreAjeno);
-  afirmar('la imagen subida sin usar no queda publicada', !fs.existsSync(path.join(UPLOADS, nombreAjeno)));
+  const imagenEliminada = await db.query(
+    'DELETE FROM moderacion_imagenes WHERE nombre_archivo = $1',
+    [nombreAjeno]
+  );
+  afirmar('se elimina de PostgreSQL la imagen de prueba sin publicar', imagenEliminada.rowCount === 1);
+  const imagenSinRegistro = await fetch(
+    `${url}/api/catalogo/imagenes/${encodeURIComponent(nombreAjeno)}`
+  );
+  afirmar('la imagen sin registro ya no está disponible', imagenSinRegistro.status === 404);
 
   console.log(`\n${'='.repeat(52)}`);
   console.log(`RESULTADO: ${ok} OK, ${fallos} fallos`);
@@ -672,7 +684,7 @@ main()
     process.exit(1);
   });
 
-/** Deja la base y el disco como estaban. */
+/** Deja la base y los fixtures como estaban. */
 async function limpiarEstado() {
   try {
     for (const dni of creados) {
@@ -683,15 +695,7 @@ async function limpiarEstado() {
         await db.query('DELETE FROM instituciones WHERE nombre = $1', [`Inst Prueba ${u.rows[0].id}`]);
       }
     }
-    await db.query("DELETE FROM moderacion_imagenes WHERE nombre_archivo LIKE 'prueba_mod%'");
-
-    // Las copias del servidor se borran por nombre: si no, la prueba deja
-    // basura en uploads/ y en la cola de moderación.
-    let borrados = 0;
-    for (const nombre of archivosServidor) {
-      if (almacen.eliminarArchivo(nombre)) borrados += 1;
-    }
-    console.log(`\nBase restaurada. ${borrados} archivos de prueba borrados del servidor.`);
+    console.log('\nBase restaurada. Se limpiaron los registros de prueba y los fixtures temporales.');
   } catch (e) {
     console.warn('Aviso al limpiar:', e.message);
   }

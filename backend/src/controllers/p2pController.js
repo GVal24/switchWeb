@@ -140,7 +140,17 @@ const verImagenPublicada = asyncWrapper(async (req, res) => {
     });
   }
 
-  res.setHeader('Content-Type', imagen.mime_detectado || 'application/octet-stream');
+  const mimeDetectado =
+    imagen.mime_detectado || moderacionService.detectarFormato(imagen.datos_imagen)?.mime;
+  if (!mimeDetectado) {
+    return res.status(404).json({
+      exito: false,
+      codigoEstado: 404,
+      mensaje: 'La imagen no está disponible.',
+    });
+  }
+
+  res.setHeader('Content-Type', mimeDetectado);
   res.setHeader('Cache-Control', 'public, max-age=300');
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.send(imagen.datos_imagen);

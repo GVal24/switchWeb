@@ -296,6 +296,7 @@ function evaluarImagen(imagen) {
     motivos,
     motivoPrincipal: principal,
     resultados,
+    mimeDetectado: resultados.find((resultado) => resultado.mimeDetectado)?.mimeDetectado || null,
     bytes: imagenLimpia.length,
     datosImagen: imagenLimpia,
   };

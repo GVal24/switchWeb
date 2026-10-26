@@ -336,8 +336,7 @@ class ModeracionModel {
        WHERE m.nombre_archivo = $1
          AND m.decision = 'APROBADA'
          AND p.estado = 'Activo'
-         AND m.datos_imagen IS NOT NULL
-         AND m.mime_detectado IS NOT NULL`,
+         AND m.datos_imagen IS NOT NULL`,
       [nombreArchivo]
     );
     return result.rows[0] || null;

@@ -4,11 +4,11 @@
  * Levanta la API real en un puerto efímero y prueba por HTTP contra
  * PostgreSQL. Deja la base como estaba: borra lo que crea.
  *
- * Ejecutar con: node backend/scripts/test_otp_legales.js
+ * Ejecutar desde la raíz con: node backend/test/integration-manual/test_otp_legales.js
  */
 require('dotenv').config();
-const app = require('../src/index');
-const db = require('../src/config/db');
+const app = require('../../src/index');
+const db = require('../../src/config/db');
 
 let ok = 0;
 let fallos = 0;
@@ -297,7 +297,7 @@ async function main() {
     )
   );
 
-  const hashEsperado = require('../src/content/legales').hashDocumento('terminos');
+  const hashEsperado = require('../../src/content/legales').hashDocumento('terminos');
   afirmar(
     'el hash guardado coincide con el texto vigente',
     acept.rows.find((r) => r.documento === 'TERMINOS')?.hash_documento === hashEsperado
@@ -317,7 +317,7 @@ async function main() {
   // ---------------------------------------------------------
   const borrar = await db.query('DELETE FROM usuarios WHERE dni = $1', [DNI_PRUEBA]);
   const borrarOtp = await db.query('DELETE FROM verificaciones_otp WHERE telefono = $1', [
-    require('../src/services/providers/otpProvider').normalizarTelefono(TEL_PRUEBA),
+    require('../../src/services/providers/otpProvider').normalizarTelefono(TEL_PRUEBA),
   ]);
   console.log(`  usuarios borrados: ${borrar.rowCount}`);
   console.log(`  códigos OTP borrados: ${borrarOtp.rowCount}`);

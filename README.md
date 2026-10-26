@@ -83,6 +83,10 @@ switchWeb/
 │   │   ├── routes/            # Endpoints /api
 │   │   └── utils/             # Gamificación, clasificador, geo, imágenes
 │   ├── scripts/generarQrs.js
+│   ├── test/
+│   │   ├── password-reset.test.js
+│   │   ├── fixtures/
+│   │   └── integration-manual/ # Flujos que usan una base de datos
 │   └── qrs_instituciones/     # PNG de los QR de presencia
 ├── docs/screenshots/          # Capturas usadas en el README
 ├── .env.example               # Plantilla de variables de entorno
@@ -158,6 +162,10 @@ También se puede abrir `frontend-web/index.html` con un servidor estático (Liv
 cd backend
 node scripts/generarQrs.js   # guarda los PNG en backend/qrs_instituciones/
 ```
+
+### 5. Pruebas
+
+Desde `backend`, ejecutá `npm test` para correr las pruebas unitarias. Las pruebas de integración que están en `test/integration-manual/` no forman parte de ese comando: usan una base de datos y deben ejecutarse sólo contra una base local descartable, nunca contra producción.
 
 ---
 
