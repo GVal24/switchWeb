@@ -144,6 +144,11 @@ export async function render(contenedor) {
     lista.querySelectorAll('[data-toggle]').forEach((b) =>
       b.addEventListener('click', () => alternar(b.dataset.toggle))
     );
+    lista.querySelectorAll('[data-perfil-inst]').forEach((b) =>
+      b.addEventListener('click', () =>
+        navegar(`/instituciones/${encodeURIComponent(b.dataset.perfilInst)}`)
+      )
+    );
     lista.querySelectorAll('[data-escanear-inst]').forEach((b) =>
       b.addEventListener('click', () =>
         irA(`/qr?institucion=${encodeURIComponent(b.dataset.escanearInst)}`)
