@@ -102,7 +102,6 @@ export async function render(contenedor) {
   function vista(datos, pendientes) {
     const meses = Array.isArray(datos.meses) ? datos.meses : [];
     const actividad = Array.isArray(datos.actividadMensual) ? datos.actividadMensual : [];
-    const maximo = Math.max(1, ...actividad.map((n) => Number(n) || 0));
     const distribucion = datos.esfuerzoDistribucion || {};
 
     return `
@@ -119,40 +118,27 @@ export async function render(contenedor) {
           <span class="chip">${icon('chart')} ${esc(String(datos.tasaEfectividad || '0%'))} efectividad</span>
         </div>
         <p class="campo-ayuda" style="margin-bottom:0.4rem">Propuestas creadas en los últimos 6 meses.</p>
-        <div class="mini-grafico" role="img" aria-label="Actividad mensual: ${esc(
-          meses.map((m, i) => `${m}: ${actividad[i] || 0}`).join(', ')
-        )}">
-          ${meses
-            .map((mes, i) => {
-              const valor = Number(actividad[i]) || 0;
-              const alto = Math.max(3, Math.round((valor / maximo) * 100));
-              return `<div class="mini-grafico-barra">
-                <em>${valor}</em>
-                <i style="height:${alto}%" title="${esc(mes)}: ${valor} trueques"></i>
-                <b>${esc(mes)}</b>
-              </div>`;
-            })
-            .join('')}
-        </div>
+        ${graficoLineas(
+          meses.map((mes, indice) => ({
+            etiqueta: mes,
+            valor: Number(actividad[indice]) || 0,
+          })),
+          'Trueques propuestos por mes'
+        )}
       </div>
 
       <div class="panel mt-1">
         <div class="seccion-cabecera" style="margin-bottom:0.2rem">
           <h2>Publicaciones por esfuerzo</h2>
         </div>
-        <div class="distribucion">
-          ${ESFUERZOS.map((e) => {
-            const valor = Number(distribucion[e.clave] || 0);
-            return `<div class="distribucion-fila">
-              <span class="etiqueta">${e.etiqueta}</span>
-              <div class="barra"><span style="width:${Math.max(
-                0,
-                Math.min(100, valor)
-              )}%"></span></div>
-              <span class="valor">${valor}%</span>
-            </div>`;
-          }).join('')}
-        </div>
+        ${graficoLineas(
+          ESFUERZOS.map((esfuerzo) => ({
+            etiqueta: esfuerzo.etiqueta,
+            valor: Number(distribucion[esfuerzo.clave]) || 0,
+          })),
+          'Porcentaje de publicaciones por nivel de esfuerzo',
+          '%'
+        )}
       </div>
 
       <div class="seccion-cabecera mt-2">
@@ -169,6 +155,49 @@ export async function render(contenedor) {
       </div>
 
       <p class="campo-ayuda" style="text-align:center;margin-top:0.9rem">Las métricas se calculan en vivo desde la base de datos.</p>
+    `;
+  }
+
+  function graficoLineas(puntos, descripcion, sufijo = '') {
+    const ancho = 600;
+    const alto = 220;
+    const margen = { arriba: 18, derecha: 14, abajo: 42, izquierda: 42 };
+    const anchoUtil = ancho - margen.izquierda - margen.derecha;
+    const altoUtil = alto - margen.arriba - margen.abajo;
+    const valores = puntos.map((punto) => Math.max(0, Number(punto.valor) || 0));
+    const maximo = Math.max(1, ...valores);
+    const paso = maximo / 4;
+    const maximoEscala = maximo;
+    const coordenadas = puntos.map((punto, indice) => ({
+      x: margen.izquierda + (puntos.length > 1 ? (indice * anchoUtil) / (puntos.length - 1) : anchoUtil / 2),
+      y: margen.arriba + altoUtil - (valores[indice] / maximoEscala) * altoUtil,
+      etiqueta: punto.etiqueta,
+      valor: valores[indice],
+    }));
+    const ruta = coordenadas.map((punto) => `${punto.x},${punto.y}`).join(' ');
+    const lectura = puntos.map((punto, indice) => `${punto.etiqueta}: ${valores[indice]}${sufijo}`).join(', ');
+
+    return `
+      <div class="admin-grafico-lineas" role="img" aria-label="${esc(`${descripcion}. ${lectura}`)}">
+        <svg viewBox="0 0 ${ancho} ${alto}" preserveAspectRatio="none" aria-hidden="true">
+          ${Array.from({ length: 5 }, (_, indice) => {
+            const valor = maximoEscala - indice * paso;
+            const y = margen.arriba + (indice * altoUtil) / 4;
+            const etiqueta = sufijo ? Number(valor.toFixed(1)) : Math.round(valor);
+            return `<g class="admin-grafico-guia">
+              <line x1="${margen.izquierda}" y1="${y}" x2="${ancho - margen.derecha}" y2="${y}"></line>
+              <text x="${margen.izquierda - 8}" y="${y + 4}" text-anchor="end">${etiqueta}${sufijo}</text>
+            </g>`;
+          }).join('')}
+          ${coordenadas.length > 1 ? `<polyline class="admin-grafico-trazo" points="${ruta}"></polyline>` : ''}
+          ${coordenadas.map((punto) => `
+            <circle class="admin-grafico-punto" cx="${punto.x}" cy="${punto.y}" r="5">
+              <title>${esc(`${punto.etiqueta}: ${punto.valor}${sufijo}`)}</title>
+            </circle>
+            <text class="admin-grafico-etiqueta" x="${punto.x}" y="${alto - 12}" text-anchor="middle">${esc(punto.etiqueta)}</text>
+          `).join('')}
+        </svg>
+      </div>
     `;
   }
 
