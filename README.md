@@ -32,7 +32,7 @@ Este repositorio contiene la **versión web progresiva (PWA)** de Switch, que se
 | Backend | Node.js + Express (API REST) |
 | Base de datos | PostgreSQL |
 | Autenticación | JWT (JSON Web Tokens) + bcrypt |
-| Archivos | Multer (subida de imágenes) |
+| Imágenes | Multer en memoria durante la subida; bytes sanitizados en PostgreSQL |
 | QR / Geolocalización | Lectura de QR en el navegador (`BarcodeDetector`) + `geolocation` |
 | Despliegue actual | Aplicación web y API en **Render**, base de datos en **Neon** |
 
@@ -76,15 +76,17 @@ switchWeb/
 │       └── screens/           # Pantallas (públicas y admin/)
 ├── backend/                   # API REST y servidor de la aplicación web
 │   ├── src/
-│   │   ├── config/            # Conexión a PostgreSQL
+│   │   ├── config/            # Entorno, PostgreSQL y OTP
 │   │   ├── controllers/       # Capa HTTP
 │   │   ├── middlewares/       # JWT, errores, asyncWrapper
 │   │   ├── models/            # Acceso a datos (SQL)
 │   │   ├── routes/            # Endpoints /api
-│   │   └── utils/             # Gamificación, clasificador, geo, imágenes
+│   │   ├── services/          # Autenticación, OTP, moderación e imágenes
+│   │   ├── utils/             # Gamificación, clasificador, geo, imágenes
+│   │   └── content/           # Textos legales
 │   ├── scripts/generarQrs.js
 │   ├── test/
-│   │   ├── password-reset.test.js
+│   │   ├── *.test.js          # Pruebas unitarias
 │   │   ├── fixtures/
 │   │   └── integration-manual/ # Flujos que usan una base de datos
 │   └── qrs_instituciones/     # PNG de los QR de presencia
@@ -171,13 +173,21 @@ Desde `backend`, ejecutá `npm test` para correr las pruebas unitarias. Las prue
 
 ## Despliegue
 
-La aplicación web y la API se ejecutan en Render; Neon aloja PostgreSQL:
+La web y la API comparten el servicio de Render; Neon aloja la base PostgreSQL persistente.
 
-```
-   ┌─────────────────────────────┐     ┌───────────┐
-   │           Render            │────▶│   Neon    │
-   │   PWA (/app/) + API (/api)  │ SQL │ PostgreSQL│
-   └─────────────────────────────┘     └───────────┘
+<!-- mermaid-checked: no \n, no em-dash/en-dash, no {} in labels, subgraphs are id["label"], arrows are -->|"label"|, all subgraphs closed by end, ids unique -->
+```mermaid
+flowchart LR
+    Browser["Navegador y PWA"]
+    subgraph RenderService["Servicio web en Render"]
+        WebApp["Interfaz web en /app"]
+        Api["API Node.js en /api"]
+    end
+    NeonDb[("PostgreSQL en Neon")]
+
+    Browser -->|"usa la interfaz"| WebApp
+    Browser -->|"envia solicitudes"| Api
+    Api -->|"lee y guarda datos"| NeonDb
 ```
 
 ### 1. Base de datos (Neon)
@@ -193,7 +203,7 @@ La aplicación web y la API se ejecutan en Render; Neon aloja PostgreSQL:
 3. **Build Command:** `npm install`  ·  **Start Command:** `npm start`
 4. Cargar las variables de entorno de Neon y las claves secretas de la aplicación.
 
-Las imágenes nuevas se guardan en Neon para que persistan entre reinicios y despliegues, sin depender de un disco persistente en Render. Quedan pendientes de revisión y sólo se muestran en el catálogo después de que una persona administradora las aprueba. Las imágenes anteriores no se recuperan si el almacenamiento temporal donde estaban ya fue eliminado. Las imágenes nuevas consumen espacio de la base de datos.
+Las imágenes nuevas se guardan como bytes en Neon para que persistan entre reinicios y despliegues, sin depender de un disco persistente en Render. Quedan pendientes de revisión y sólo se muestran en el catálogo después de que una persona administradora las aprueba. Las imágenes anteriores no se recuperan si el almacenamiento temporal donde estaban ya fue eliminado. Las imágenes nuevas consumen espacio de la base de datos.
 
 ## Usuarios de prueba
 
@@ -223,4 +233,5 @@ La cuenta administradora permite probar el panel; las cuentas Lucía, Pedro y An
 
 ## Documentación adicional
 
-- [Diagramas Mermaid](diagramas_mermaid_srs.md): diagrama de contexto, casos de uso y modelo entidad-relación.
+- [Diagramas del sistema](diagramas_mermaid_srs.md): vista general, flujo de publicación con imagen y relaciones principales de datos.
+- [Diagrama de arquitectura](.github/modernize/assessment/engines/facts/architecture-diagram.md): capas de la aplicación y relaciones entre componentes.
