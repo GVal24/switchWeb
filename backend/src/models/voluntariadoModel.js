@@ -1,6 +1,7 @@
 const db = require('../config/db');
 const UsuarioModel = require('./usuarioModel');
 const { clasificarEsfuerzo } = require('../utils/clasificadorEsfuerzo');
+const { ValidationError } = require('../utils/customErrors');
 
 // Vigencia base del Nexo Social según la prioridad que la institución
 // declaró sobre la necesidad cubierta. La urgencia la define quien conoce
@@ -57,16 +58,14 @@ class VoluntariadoModel {
         [cupoNecesidadId]
       );
       const cupo = resCupo.rows[0];
-      if (cupo) {
-        if (cupo.institucion_id && Number(cupo.institucion_id) !== Number(institucionId)) {
-          throw new (require('../utils/customErrors').ValidationError)('El cupo seleccionado no corresponde a la instituci�n del c�digo QR escaneado.');
-        }
-        prioridadAplicada = cupo.prioridad;
-        diasBase = VIGENCIA_POR_PRIORIDAD[cupo.prioridad] || VIGENCIA_POR_PRIORIDAD.GENERAL;
-        const esfuerzo = clasificarEsfuerzo(cupo.titulo, cupo.descripcion);
-        esfuerzoAplicado = esfuerzo;
-        diasBase += BONUS_POR_ESFUERZO[esfuerzo] || 0;
+      if (!cupo || Number(cupo.institucion_id) !== Number(institucionId)) {
+        throw new ValidationError('El pedido no corresponde a la institución del código QR escaneado.');
       }
+      prioridadAplicada = cupo.prioridad;
+      diasBase = VIGENCIA_POR_PRIORIDAD[cupo.prioridad] || VIGENCIA_POR_PRIORIDAD.GENERAL;
+      const esfuerzo = clasificarEsfuerzo(cupo.titulo, cupo.descripcion);
+      esfuerzoAplicado = esfuerzo;
+      diasBase += BONUS_POR_ESFUERZO[esfuerzo] || 0;
     }
 
     // Recompensa por nivel de impacto comunitario: los vecinos más activos
@@ -86,6 +85,25 @@ class VoluntariadoModel {
     const client = await db.pool.connect();
     try {
       await client.query('BEGIN');
+
+      if (cupoNecesidadId) {
+        const cupoResult = await client.query(
+          `SELECT id, institucion_id, cupo_actual, cupo_maximo, activo
+           FROM cupos_necesidad
+           WHERE id = $1
+           FOR UPDATE;`,
+          [cupoNecesidadId]
+        );
+        const cupo = cupoResult.rows[0];
+        if (
+          !cupo ||
+          Number(cupo.institucion_id) !== Number(institucionId) ||
+          !cupo.activo ||
+          Number(cupo.cupo_actual) >= Number(cupo.cupo_maximo)
+        ) {
+          throw new ValidationError('Este pedido ya no tiene cupos disponibles.');
+        }
+      }
 
       const queryNexo = `
         INSERT INTO nexos_sociales (
@@ -117,8 +135,11 @@ class VoluntariadoModel {
         const queryUpdateCupo = `
           UPDATE cupos_necesidad
           SET cupo_actual = cupo_actual + 1,
-              activo = CASE WHEN cupo_actual + 1 >= cupo_maximo THEN false ELSE true END
-          WHERE id = $1 AND cupo_actual < cupo_maximo
+              activo = CASE
+                WHEN pausado_manualmente OR cupo_actual + 1 >= cupo_maximo THEN false
+                ELSE true
+              END
+          WHERE id = $1 AND activo = TRUE AND cupo_actual < cupo_maximo
           RETURNING titulo, cupo_actual, cupo_maximo, (cupo_actual >= cupo_maximo) AS completo;
         `;
         const resCupo = await client.query(queryUpdateCupo, [cupoNecesidadId]);

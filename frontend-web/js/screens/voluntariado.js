@@ -68,6 +68,9 @@ export async function render(contenedor) {
   contenedor.querySelectorAll('[data-escanear]').forEach((b) =>
     b.addEventListener('click', () => irA('/qr'))
   );
+  lista.querySelectorAll('[data-perfil-inst]').forEach((b) =>
+    b.addEventListener('click', () => navegar(`/instituciones/${encodeURIComponent(b.dataset.perfilInst)}`))
+  );
   contenedor.querySelectorAll('[data-sumar]').forEach((b) =>
     b.addEventListener('click', () => navegar('/instituciones/registro'))
   );
@@ -184,6 +187,9 @@ export async function render(contenedor) {
     }">${icon(abierta ? 'minus' : 'plus')} ${
       abierta ? 'Ocultar necesidades' : 'Ver necesidades'
     }</button>
+          <button type="button" class="btn btn-fantasma btn-sm" data-perfil-inst="${esc(id)}">${icon(
+      'user'
+    )} Perfil</button>
           <button type="button" class="btn btn-primario btn-sm" data-escanear-inst="${esc(id)}">${icon(
       'qr'
     )} Validar presencia</button>

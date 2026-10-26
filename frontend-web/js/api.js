@@ -211,6 +211,53 @@ export const API = {
     return listaDe(datos(res), ['cupos']);
   },
 
+  async perfilInstitucion(institucionId) {
+    const res = await pedir(`/instituciones/${encodeURIComponent(institucionId)}/perfil`, {
+      auth: false,
+    });
+    return datos(res);
+  },
+
+  async miPanelInstitucional() {
+    const res = await pedir('/instituciones/mi-panel');
+    return listaDe(datos(res), ['instituciones']);
+  },
+
+  async crearNecesidad(institucionId, payload) {
+    return pedir(`/instituciones/${encodeURIComponent(institucionId)}/necesidades`, {
+      metodo: 'POST',
+      body: payload,
+    });
+  },
+
+  async actualizarNecesidad(institucionId, necesidadId, payload) {
+    return pedir(
+      `/instituciones/${encodeURIComponent(institucionId)}/necesidades/${encodeURIComponent(necesidadId)}`,
+      { metodo: 'PATCH', body: payload }
+    );
+  },
+
+  async pausarNecesidad(institucionId, necesidadId, pausada) {
+    return pedir(
+      `/instituciones/${encodeURIComponent(institucionId)}/necesidades/${encodeURIComponent(necesidadId)}/pausa`,
+      { metodo: 'POST', body: { pausada } }
+    );
+  },
+
+  async agregarDelegado(institucionId, dni) {
+    return pedir(`/instituciones/${encodeURIComponent(institucionId)}/delegados`, {
+      metodo: 'POST',
+      body: { dni },
+    });
+  },
+
+  async quitarDelegado(institucionId, membresiaId) {
+    return pedir(
+      `/instituciones/${encodeURIComponent(institucionId)}/delegados/${encodeURIComponent(membresiaId)}`,
+      { metodo: 'DELETE' }
+    );
+  },
+
   async registrarInstitucion(payload) {
     return pedir('/instituciones/registro', { metodo: 'POST', auth: false, body: payload });
   },
@@ -333,6 +380,19 @@ export const API = {
   async adminEstadisticas() {
     const res = await pedir('/admin/estadisticas', { admin: true });
     return datos(res);
+  },
+
+  async adminInstituciones() {
+    const res = await pedir('/admin/instituciones', { admin: true });
+    return listaDe(datos(res), ['instituciones']);
+  },
+
+  async adminAsignarResponsable(institucionId, dni) {
+    return pedir(`/admin/instituciones/${encodeURIComponent(institucionId)}/responsable`, {
+      metodo: 'POST',
+      admin: true,
+      body: { dni },
+    });
   },
 
   async adminReportes() {

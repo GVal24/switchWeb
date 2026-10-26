@@ -162,6 +162,7 @@ export async function render(contenedor) {
         ${accion('moderacion', 'image', 'Moderación', 'Revisar fotos y textos antes de publicar', pendientes.moderacion, '/admin/moderacion')}
         ${accion('reportes', 'alert', 'Denuncias', 'Evaluar reportes de la comunidad', datos.reportesPendientes ?? 0, '/admin/reportes')}
         ${accion('bloqueados', 'lock', 'Cuentas bloqueadas', 'Suspensiones, bajas y altas', 0, '/admin/bloqueados')}
+        ${accion('instituciones', 'town', 'Instituciones', 'Asignar responsables institucionales', 0, '/admin/instituciones')}
         ${accion('contacto', 'mail', 'Bandeja de entrada', 'Responder mensajes de contacto', pendientes.contacto, '/admin/contacto')}
         ${accion('sugerencias', 'sliders', 'Sugerencias', 'Revisar clasificaciones de esfuerzo', pendientes.sugerencias, '/admin/sugerencias')}
         ${accion('sitio', 'home', 'Volver al sitio', 'Recorrer Switch como vecino', 0, '/catalogo')}
