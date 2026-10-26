@@ -95,7 +95,7 @@ CREATE TABLE IF NOT EXISTS publicaciones_p2p (
     imagen_url TEXT,
     -- 'PENDIENTE_REVISION': la imagen fue screenshoteada y está en cuarentena
     -- hasta que una persona la apruebe. No aparece en el catálogo público.
-    -- 'Activo', 'Pausado', 'Completado', 'Rechazada'
+    -- 'Activo', 'Pausado' (trueque aceptado), 'Completado' (ambas partes confirmaron), 'Rechazada'
     estado VARCHAR(30) NOT NULL DEFAULT 'PENDIENTE_REVISION',
     creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 

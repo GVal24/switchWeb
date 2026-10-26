@@ -1,7 +1,6 @@
 const asyncWrapper = require('../middlewares/asyncWrapper');
 const { ValidationError, NotFoundError, ForbiddenError } = require('../utils/customErrors');
 const IntercambioModel = require('../models/intercambioModel');
-const ResenaModel = require('../models/resenaModel');
 const P2PModel = require('../models/p2pModel');
 const UsuarioModel = require('../models/usuarioModel');
 const VoluntariadoModel = require('../models/voluntariadoModel');
@@ -165,6 +164,9 @@ const responderPropuesta = asyncWrapper(async (req, res) => {
   if (!resultado) {
     throw new ValidationError('Esta propuesta ya fue respondida.');
   }
+  if (resultado.publicacionesNoDisponibles) {
+    throw new ValidationError('Una de las publicaciones de este trueque ya no está disponible.');
+  }
 
   res.status(200).json({
     exito: true,
@@ -177,9 +179,9 @@ const responderPropuesta = asyncWrapper(async (req, res) => {
 
 /**
  * POST /api/intercambios/:id/confirmar
- * Body opcional: { puntaje?: 1-5, comentario? }
- * Ambas partes confirman la concreción del trueque. Al confirmar ambas,
- * pasa a COMPLETADO. Si envía puntaje, se registra la reseña.
+ * Body: { puntaje: 1-5, comentario? }
+ * Ambas partes confirman la concreción del trueque y califican a la otra parte.
+ * Al confirmar ambas, pasa a COMPLETADO.
  */
 const confirmarTrueque = asyncWrapper(async (req, res) => {
   const { id } = req.params;
@@ -196,6 +198,9 @@ const confirmarTrueque = asyncWrapper(async (req, res) => {
   if (propuesta.estado === 'RECHAZADA') {
     throw new ValidationError('Esta propuesta fue rechazada.');
   }
+  if (!Number.isInteger(puntaje) || puntaje < 1 || puntaje > 5) {
+    throw new ValidationError('Tenés que calificar a la otra persona con 1 a 5 estrellas para confirmar el trueque.');
+  }
 
   // Habilitación vigente también para cerrar el trueque
   await exigirNexoSocialVigente(usuarioId);
@@ -204,27 +209,10 @@ const confirmarTrueque = asyncWrapper(async (req, res) => {
     'confirmar este trueque, porque la otra parte está suspendida o dada de baja'
   );
 
-  const resultado = await IntercambioModel.confirmar(id, usuarioId);
+  const resultado = await IntercambioModel.confirmar(id, usuarioId, puntaje, comentario || null);
   if (resultado.noExiste) throw new NotFoundError('La propuesta no existe.');
   if (resultado.sinPermiso) throw new ForbiddenError('Solo participan de este trueque quien publicó y quien ofreció.');
   if (resultado.estadoInvalido) throw new ValidationError('Este trueque ya no admite confirmaciones.');
-
-  let resenaCreada = false;
-  if (puntaje != null) {
-    if (!Number.isInteger(puntaje) || puntaje < 1 || puntaje > 5) {
-      throw new ValidationError('La calificación debe ser un número entre 1 y 5.');
-    }
-    await ResenaModel.crear({
-      intercambioId: Number(id),
-      autorId: usuarioId,
-      destinoId: Number(propuesta.dueno_id) === Number(usuarioId)
-        ? Number(propuesta.ofertante_id)
-        : Number(propuesta.dueno_id),
-      puntaje,
-      comentario: comentario || null
-    });
-    resenaCreada = true;
-  }
 
   const completado = resultado.datos.estado === 'COMPLETADO';
 
@@ -233,7 +221,7 @@ const confirmarTrueque = asyncWrapper(async (req, res) => {
     mensaje: completado
       ? '¡Trueque completado por ambas partes! Gracias por confiar en Switch.'
       : 'Confirmación registrada. Falta que la otra parte confirme.',
-    datos: { ...resultado.datos, resenaCreada }
+    datos: { ...resultado.datos, resenaCreada: resultado.resenaCreada }
   });
 });
 

@@ -288,7 +288,7 @@ export const API = {
     return pedir(`/intercambios/${encodeURIComponent(id)}/confirmar`, {
       metodo: 'POST',
       body: {
-        ...(puntaje ? { puntaje } : {}),
+        puntaje,
         ...(comentario ? { comentario } : {}),
       },
     });

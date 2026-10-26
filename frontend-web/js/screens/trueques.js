@@ -234,7 +234,7 @@ export async function render(contenedor, ctx) {
     const ok = await confirmar({
       titulo: aceptar ? 'Aceptar el trueque' : 'Rechazar la propuesta',
       texto: aceptar
-        ? 'Si aceptás, la otra persona va a poder coordinar la entrega por chat. Después ambas partes confirman que se concretó.'
+        ? 'Al aceptar, las publicaciones del trueque se ocultan del catálogo. Después ambas partes coordinan por chat, confirman la entrega y califican.'
         : 'La propuesta va a quedar cerrada y la otra persona recibirá el aviso. Después podés charlar por chat si querés.',
       textoOk: aceptar ? 'Aceptar trueque' : 'Rechazar',
       peligro: !aceptar,
@@ -254,8 +254,8 @@ export async function render(contenedor, ctx) {
     const { cuerpo, cerrar } = hoja({
       titulo: 'Confirmar entrega',
       html: `
-        <p class="modal-texto">¿El trueque se concretó? Podés dejar una calificación para ayudar a la reputación de la otra persona.</p>
-        <p class="campo-etiqueta">Tu calificación (opcional)</p>
+        <p class="modal-texto">¿El trueque se concretó? Calificá a la otra persona para confirmar y ayudar a su reputación.</p>
+        <p class="campo-etiqueta">Tu calificación (obligatoria)</p>
         <div class="fila" style="gap:0.35rem;justify-content:center;margin:0.2rem 0 0.8rem" role="group" aria-label="Calificación de 1 a 5 estrellas">
           ${[1, 2, 3, 4, 5]
             .map(
@@ -271,8 +271,7 @@ export async function render(contenedor, ctx) {
           <textarea class="campo-input" id="confirmar-comentario" rows="3" maxlength="300" placeholder="¿Cómo fue coordinar con esta persona?"></textarea>
         </label>
         <div id="confirmar-error"></div>
-        <button type="button" class="btn btn-primario btn-block btn-lg" data-confirmar-si>${icon('checkcircle')} Confirmar entrega</button>
-        <button type="button" class="btn btn-fantasma btn-block mt-1" data-confirmar-sin>Confirmar sin calificar</button>
+        <button type="button" class="btn btn-primario btn-block btn-lg" data-confirmar-si disabled>${icon('checkcircle')} Confirmar entrega y calificar</button>
       `,
     });
 
@@ -284,6 +283,7 @@ export async function render(contenedor, ctx) {
         b.setAttribute('aria-pressed', String(activa));
         b.style.color = activa ? 'var(--naranja)' : '';
       });
+      cuerpo.querySelector('[data-confirmar-si]').disabled = puntaje === 0;
     };
     estrellas.forEach((b) =>
       b.addEventListener('click', () => {
@@ -293,17 +293,19 @@ export async function render(contenedor, ctx) {
     );
 
     const errorEl = cuerpo.querySelector('#confirmar-error');
-    const hacer = async (conPuntaje) => {
+    const hacer = async () => {
       errorEl.innerHTML = '';
-      const boton = cuerpo.querySelector(conPuntaje ? '[data-confirmar-si]' : '[data-confirmar-sin]');
+      if (!puntaje) {
+        errorEl.innerHTML = `<div class="banner banner-peligro" style="margin-top:0.6rem">${icon(
+          'alert'
+        )}<span>Seleccioná una calificación de 1 a 5 estrellas.</span></div>`;
+        return;
+      }
+      const boton = cuerpo.querySelector('[data-confirmar-si]');
       const restaurar = cargarBoton(boton, 'Confirmando…');
       try {
         const comentario = cuerpo.querySelector('#confirmar-comentario').value.trim();
-        const res = await API.confirmar(
-          id,
-          conPuntaje ? puntaje || undefined : undefined,
-          conPuntaje && comentario ? comentario : undefined
-        );
+        const res = await API.confirmar(id, puntaje, comentario || undefined);
         cerrar();
         toast(res?.mensaje || 'Confirmación registrada.', 'exito', 4500);
         cargar();
@@ -315,8 +317,7 @@ export async function render(contenedor, ctx) {
       }
     };
 
-    cuerpo.querySelector('[data-confirmar-si]').addEventListener('click', () => hacer(true));
-    cuerpo.querySelector('[data-confirmar-sin]').addEventListener('click', () => hacer(false));
+    cuerpo.querySelector('[data-confirmar-si]').addEventListener('click', hacer);
   }
 
   function normalizarItems(valor) {
