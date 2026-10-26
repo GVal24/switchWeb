@@ -175,21 +175,6 @@ Desde `backend`, ejecutá `npm test` para correr las pruebas unitarias. Las prue
 
 La web y la API comparten el servicio de Render; Neon aloja la base PostgreSQL persistente.
 
-<!-- mermaid-checked: no \n, no em-dash/en-dash, no {} in labels, subgraphs are id["label"], arrows are -->|"label"|, all subgraphs closed by end, ids unique -->
-```mermaid
-flowchart LR
-    Browser["Navegador y PWA"]
-    subgraph RenderService["Servicio web en Render"]
-        WebApp["Interfaz web en /app"]
-        Api["API Node.js en /api"]
-    end
-    NeonDb[("PostgreSQL en Neon")]
-
-    Browser -->|"usa la interfaz"| WebApp
-    Browser -->|"envia solicitudes"| Api
-    Api -->|"lee y guarda datos"| NeonDb
-```
-
 ### 1. Base de datos (Neon)
 
 1. Crear un proyecto en [neon.tech](https://neon.tech) y copiar la cadena de conexión.

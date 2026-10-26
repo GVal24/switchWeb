@@ -1,107 +1,83 @@
-# Architecture Diagram
+# Diagrama de arquitectura
 
-Switch is a progressive web application served with its REST API from one Node.js service. PostgreSQL stores application data, including the bytes of newly uploaded catalog images.
+Estas vistas resumen cómo se comunican las partes de Switch. Para conocer las tecnologías y el despliegue, consultá la sección correspondiente del [README](../../../../../README.md).
 
-## Application Architecture
+## Arquitectura de la aplicación
 
 <!-- mermaid-checked: no \n, no em-dash/en-dash, no {} in labels, subgraphs are id["label"], arrows are -->|"label"|, all subgraphs closed by end, ids unique -->
 ```mermaid
 flowchart TD
-    subgraph ClientLayer["Client Layer"]
-        Browser["Web browser"]
-        Pwa["Switch PWA"]
+    subgraph ClientLayer["Interfaz"]
+        Browser["Navegador"]
+        Pwa["Aplicación web PWA"]
     end
-    subgraph RenderLayer["Application Layer on Render"]
-        Static["Web files at /app"]
-        Api["Node.js and Express API"]
+    subgraph RenderLayer["Servicio de aplicación"]
+        Static["Archivos web"]
+        Api["API"]
     end
-    subgraph DataLayer["Data Layer"]
-        NeonDb[("PostgreSQL on Neon")]
+    subgraph DataLayer["Datos"]
+        NeonDb[("Base PostgreSQL")]
     end
-    OtpProvider["Optional SMS or WhatsApp provider"]
+    OtpProvider["Proveedor de SMS o WhatsApp"]
 
-    Browser -->|"runs"| Pwa
-    Pwa -->|"loads assets from"| Static
-    Pwa -->|"sends API requests"| Api
-    Api -->|"reads and writes"| NeonDb
-    Api -.->|"sends verification codes when configured"| OtpProvider
+    Browser -->|"usa"| Pwa
+    Pwa -->|"carga archivos desde"| Static
+    Pwa -->|"envía solicitudes"| Api
+    Api -->|"lee y guarda"| NeonDb
+    Api -.->|"envía códigos si está configurado"| OtpProvider
 ```
 
-### Technology Stack Summary
-
-| Layer | Technology | Version | Purpose |
-|---|---|---|---|
-| Client | HTML, CSS, JavaScript ES modules | Browser-supported | PWA screens and interactions |
-| Client | Service worker and web manifest | Browser-supported | Installable app and partial offline access |
-| Application | Node.js | 20 | Runtime for the web server and API |
-| Application | Express | 4.x | Serves the PWA and REST endpoints |
-| Application | Multer | 2.x | Receives uploaded images in memory |
-| Data access | node-postgres (`pg`) | 8.x | Executes PostgreSQL queries |
-| Database | PostgreSQL | 14+ | Persists accounts, activity, moderation, and image bytes |
-| Authentication | JWT and bcrypt | JWT 9.x, bcrypt 6.x | Authenticated sessions and password hashing |
-
-### Data Storage & External Services
-
-The deployed Render service hosts both the PWA (`/app`) and API (`/api`). Neon provides PostgreSQL storage. New catalog images are sanitized by the API and their bytes are stored in PostgreSQL, so they do not depend on Render's temporary filesystem. The OTP service can use a configured SMS or WhatsApp provider; local development can use the mock provider. Local development may connect to a local PostgreSQL database through environment configuration.
-
-### Key Architectural Decisions
-
-- The browser talks to the same Express service for the PWA and API in the deployed setup.
-- Backend controllers coordinate domain services and SQL models; models use a shared PostgreSQL connection module.
-- Catalog images are not made public until human moderation approves them and the related publication is active.
-
-## Component Relationships
+## Relación entre componentes
 
 <!-- mermaid-checked: no \n, no em-dash/en-dash, no {} in labels, subgraphs are id["label"], arrows are -->|"label"|, all subgraphs closed by end, ids unique -->
 ```mermaid
 flowchart LR
-    subgraph PresentationLayer["Presentation"]
-        cPwa["Frontend PWA"]
-        cApiClient["JavaScript API client"]
+    subgraph PresentationLayer["Presentación"]
+        cPwa["Interfaz PWA"]
+        cApiClient["Cliente de API"]
     end
-    subgraph HttpLayer["HTTP Layer"]
-        cServer["Express application"]
-        cRoutes["API routes"]
-        cMiddleware["Auth and error middleware"]
-        cControllers["HTTP controllers"]
+    subgraph HttpLayer["Capa HTTP"]
+        cServer["Servidor web"]
+        cRoutes["Rutas de API"]
+        cMiddleware["Autenticación y errores"]
+        cControllers["Controladores"]
     end
-    subgraph BusinessLayer["Business Logic"]
-        cServices["Domain services"]
-        cUtils["Shared utilities"]
+    subgraph BusinessLayer["Lógica de negocio"]
+        cServices["Servicios"]
+        cUtils["Utilidades"]
     end
-    subgraph DataAccessLayer["Data Access"]
-        cModels["SQL models"]
-        cDbConfig["PostgreSQL connection"]
+    subgraph DataAccessLayer["Acceso a datos"]
+        cModels["Modelos SQL"]
+        cDbConfig["Conexión a PostgreSQL"]
     end
-    subgraph StorageLayer["Storage"]
-        cNeonDb[("PostgreSQL on Neon")]
+    subgraph StorageLayer["Almacenamiento"]
+        cNeonDb[("Base PostgreSQL")]
     end
 
-    cPwa -->|"uses"| cApiClient
-    cApiClient -->|"sends HTTP requests"| cServer
-    cServer -->|"mounts"| cRoutes
-    cMiddleware -.->|"protects requests"| cRoutes
-    cRoutes -->|"dispatches to"| cControllers
-    cControllers -->|"uses when needed"| cServices
-    cControllers -->|"reads and writes"| cModels
-    cServices -->|"uses shared logic"| cUtils
-    cServices -->|"uses when needed"| cModels
-    cModels -->|"queries through"| cDbConfig
-    cDbConfig -->|"connects to"| cNeonDb
+    cPwa -->|"usa"| cApiClient
+    cApiClient -->|"envía solicitudes"| cServer
+    cServer -->|"registra"| cRoutes
+    cMiddleware -.->|"protege"| cRoutes
+    cRoutes -->|"dirige a"| cControllers
+    cControllers -->|"coordina"| cServices
+    cControllers -->|"consulta o actualiza"| cModels
+    cServices -->|"reutiliza"| cUtils
+    cServices -->|"consulta o actualiza"| cModels
+    cModels -->|"consulta mediante"| cDbConfig
+    cDbConfig -->|"se conecta a"| cNeonDb
 ```
 
-### Component Inventory
+### Componentes
 
-| Component | Layer | Type | Responsibility |
+| Componente | Capa | Tipo | Responsabilidad |
 |---|---|---|---|
-| Frontend PWA | Presentation | Web application | Renders screens and navigation |
-| JavaScript API client | Presentation | HTTP client | Calls the backend and handles responses |
-| Express application | HTTP | Server | Configures middleware and serves web files |
-| API routes | HTTP | Router | Maps `/api` paths to controllers |
-| Auth and error middleware | HTTP | Middleware | Validates sessions, permissions, and errors |
-| HTTP controllers | HTTP | Controllers | Validates requests and coordinates operations |
-| Domain services | Business Logic | Services | Implements authentication, OTP, and image moderation workflows |
-| Shared utilities | Business Logic | Utilities | Provides classification, gamification, geography, and image helpers |
-| SQL models | Data Access | Models | Reads and updates PostgreSQL records |
-| PostgreSQL connection | Data Access | Configuration | Creates the shared database connection |
-| PostgreSQL on Neon | Storage | Database | Persists application records and image bytes |
+| Interfaz PWA | Presentación | Aplicación web | Muestra pantallas y navegación |
+| Cliente de API | Presentación | Cliente HTTP | Envía solicitudes y procesa respuestas |
+| Servidor web | HTTP | Servidor | Configura rutas y entrega archivos web |
+| Rutas de API | HTTP | Enrutador | Asocia direcciones con controladores |
+| Autenticación y errores | HTTP | Middleware | Comprueba sesión, permisos y errores |
+| Controladores | HTTP | Controladores | Atienden solicitudes y coordinan operaciones |
+| Servicios | Negocio | Servicios | Implementan flujos de autenticación, códigos e imágenes |
+| Utilidades | Negocio | Funciones compartidas | Apoyan clasificación, gamificación y geolocalización |
+| Modelos SQL | Datos | Modelos | Consultan y actualizan registros |
+| Conexión a PostgreSQL | Datos | Configuración | Administra el acceso a la base |
