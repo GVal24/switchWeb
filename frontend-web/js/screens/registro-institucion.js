@@ -159,12 +159,12 @@ export async function render(contenedor) {
             </div>
             <div class="campo" style="margin-bottom:0">
               <span class="campo-etiqueta">Prioridad</span>
-              <select class="campo-input" data-campo="prioridad" aria-label="Prioridad de la necesidad ${i + 1}">
+              <div class="chips-fila" role="group" aria-label="Prioridad de la necesidad ${i + 1}">
                 ${PRIORIDADES.map(
                   (p) =>
-                    `<option value="${p.valor}" ${n.prioridad === p.valor ? 'selected' : ''}>${p.etiqueta}</option>`
+                    `<button type="button" class="chip chip-opcion prioridad-${p.valor.toLowerCase()}" data-prioridad="${p.valor}" aria-pressed="${n.prioridad === p.valor}">${p.etiqueta}</button>`
                 ).join('')}
-              </select>
+              </div>
             </div>
           </div>
         </div>`
@@ -180,6 +180,17 @@ export async function render(contenedor) {
         }
         necesidades.splice(indice, 1);
         pintarNecesidades();
+      });
+
+      editor.querySelectorAll('[data-prioridad]').forEach((boton) => {
+        boton.addEventListener('click', () => {
+          const necesidad = necesidades[indice];
+          if (!necesidad) return;
+          necesidad.prioridad = boton.dataset.prioridad;
+          editor.querySelectorAll('[data-prioridad]').forEach((opcion) => {
+            opcion.setAttribute('aria-pressed', String(opcion === boton));
+          });
+        });
       });
 
       editor.querySelector('[data-mas]').addEventListener('click', () => actualizarCupo(indice, 1, editor));

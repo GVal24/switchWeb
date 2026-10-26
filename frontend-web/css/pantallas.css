@@ -1863,6 +1863,47 @@ html[data-paleta="suave"] .pub-imagen-icono .icono {
   min-width: 2.4rem;
 }
 
+.admin-grafico-lineas {
+  width: 100%;
+  min-width: 0;
+  margin-top: 0.6rem;
+  overflow: hidden;
+}
+
+.admin-grafico-lineas svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  min-height: 10rem;
+  overflow: hidden;
+}
+
+.admin-grafico-guia line {
+  stroke: var(--borde);
+  stroke-width: 1;
+}
+
+.admin-grafico-guia text,
+.admin-grafico-etiqueta {
+  fill: var(--texto-suave);
+  font-family: inherit;
+  font-size: 11px;
+}
+
+.admin-grafico-trazo {
+  fill: none;
+  stroke: var(--verde);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 3;
+}
+
+.admin-grafico-punto {
+  fill: var(--tarjeta);
+  stroke: var(--verde);
+  stroke-width: 3;
+}
+
 .distribucion {
   display: flex;
   flex-direction: column;
