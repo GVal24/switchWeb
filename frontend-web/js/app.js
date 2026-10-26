@@ -43,6 +43,7 @@ const TITULOS = {
   '/accesibilidad': ['Accesibilidad', 'Tu experiencia, a tu manera'],
   '/contacto': ['Contacto', 'Escribinos'],
   '/admin': ['Administración', 'Panel de control'],
+  '/admin/instituciones': ['Instituciones', 'Asignación de responsables'],
   '/login': ['Ingresar', 'Tu cuenta de Switch'],
   '/registro': ['Crear cuenta', 'Sumate a la comunidad'],
   '/detalle': ['Publicación', 'Detalle del trueque'],
@@ -51,6 +52,8 @@ const TITULOS = {
   '/chat': ['Conversación', 'Coordinen el trueque'],
   '/qr': ['Escanear QR', 'Validar presencia'],
   '/instituciones/registro': ['Sumar institución', 'Nuevo punto de voluntariado'],
+  '/instituciones/gestion': ['Gestión institucional', 'Pedidos, estadísticas y delegados'],
+  '/instituciones/:id': ['Institución', 'Perfil institucional'],
   '/admin/moderacion': ['Moderación', 'Publicaciones pendientes'],
   '/admin/reportes': ['Denuncias', 'Reportes de la comunidad'],
   '/admin/bloqueados': ['Cuentas bloqueadas', 'Suspensiones y bajas'],
@@ -415,11 +418,25 @@ function registrarRutas() {
     seccion: '/voluntariado',
     titulo: 'Sumar institución',
   });
+  definirRuta('/instituciones/gestion', () => import('./screens/gestion-instituciones.js'), {
+    requiereSesion: true,
+    seccion: '/perfil',
+    titulo: 'Gestión institucional',
+  });
+  definirRuta('/instituciones/:id', () => import('./screens/perfil-institucion.js'), {
+    titulo: 'Institución',
+    volver: true,
+  });
   definirRuta('/admin', () => import('./screens/admin/dashboard.js'), {
     requiereAdmin: true,
     seccion: '/admin',
     titulo: 'Administración',
     volver: false,
+  });
+  definirRuta('/admin/instituciones', () => import('./screens/admin/instituciones.js'), {
+    requiereAdmin: true,
+    seccion: '/admin',
+    titulo: 'Instituciones',
   });
   definirRuta('/admin/moderacion', () => import('./screens/admin/moderacion.js'), {
     requiereAdmin: true,

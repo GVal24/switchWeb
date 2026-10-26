@@ -3,6 +3,7 @@ const router = express.Router();
 
 const authController = require('../controllers/authController');
 const instController = require('../controllers/instController');
+const institucionAdminController = require('../controllers/institucionAdminController');
 const p2pController = require('../controllers/p2pController');
 const adminController = require('../controllers/adminController');
 const chatController = require('../controllers/chatController');
@@ -14,6 +15,10 @@ const legalController = require('../controllers/legalController');
 const otpController = require('../controllers/otpController');
 const moderacionController = require('../controllers/moderacionController');
 const contactoController = require('../controllers/contactoController');
+const {
+  requerirMembresiaInstitucion,
+  requerirResponsableInstitucion
+} = require('../middlewares/institucionAcceso');
 
 const { requerirSesion, requerirSesionOpcional, requiereCuentaHabilitada, requerirAdmin } = require('../middlewares/auth');
 
@@ -39,6 +44,15 @@ router.get('/instituciones', instController.listarInstituciones);
 router.get('/instituciones/:institucionId/cupos', instController.obtenerCuposAbiertos);
 router.post('/instituciones/registro', instController.registrarInstitucion);
 router.post('/validaciones/qr-scan', requerirSesion, requiereCuentaHabilitada, instController.validarPresenciaQR);
+router.get('/instituciones/mi-panel', requerirSesion, institucionAdminController.obtenerMiPanel);
+router.get('/instituciones/:institucionId/perfil', institucionAdminController.obtenerPerfilPublico);
+router.post('/instituciones/:institucionId/necesidades', requerirSesion, requiereCuentaHabilitada, requerirMembresiaInstitucion, institucionAdminController.crearNecesidad);
+router.patch('/instituciones/:institucionId/necesidades/:necesidadId', requerirSesion, requiereCuentaHabilitada, requerirMembresiaInstitucion, institucionAdminController.actualizarNecesidad);
+router.post('/instituciones/:institucionId/necesidades/:necesidadId/pausa', requerirSesion, requiereCuentaHabilitada, requerirMembresiaInstitucion, institucionAdminController.cambiarPausaNecesidad);
+router.post('/instituciones/:institucionId/delegados', requerirSesion, requiereCuentaHabilitada, requerirMembresiaInstitucion, requerirResponsableInstitucion, institucionAdminController.agregarDelegado);
+router.delete('/instituciones/:institucionId/delegados/:membresiaId', requerirSesion, requiereCuentaHabilitada, requerirMembresiaInstitucion, requerirResponsableInstitucion, institucionAdminController.quitarDelegado);
+router.get('/admin/instituciones', requerirSesion, requerirAdmin, institucionAdminController.listarInstituciones);
+router.post('/admin/instituciones/:institucionId/responsable', requerirSesion, requiereCuentaHabilitada, requerirAdmin, institucionAdminController.asignarResponsable);
 
 // Rutas del Catálogo P2P (lectura pública, escritura con sesión)
 router.get('/catalogo', p2pController.listarCatálogoP2P);

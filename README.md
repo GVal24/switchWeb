@@ -92,7 +92,7 @@ switchWeb/
 │   └── qrs_instituciones/     # PNG de los QR de presencia
 ├── docs/screenshots/          # Capturas usadas en el README
 ├── .env.example               # Plantilla de variables de entorno
-├── schema.sql                 # DDL completo (14 tablas)
+├── schema.sql                 # DDL completo (15 tablas)
 ├── seed.sql                   # Datos de ejemplo
 └── diagramas_mermaid_srs.md   # UML del sistema
 ```
@@ -118,7 +118,7 @@ psql -U postgres -d switch_db -f schema.sql
 psql -U postgres -d switch_db -f seed.sql
 ```
 
-En Neon, ejecutá `schema.sql` desde el editor SQL. Usá `seed.sql` sólo en una base descartable para cargar datos de demostración: vacía las tablas antes de insertar los ejemplos.
+En Neon, ejecutá `schema.sql` desde el editor SQL. El esquema incluye membresías institucionales; la administración puede asignar el primer responsable a una cuenta existente desde el panel de Instituciones. Las personas autorizadas encuentran su panel en **Mi perfil → Gestión institucional**; desde allí pueden consultar estadísticas, gestionar necesidades y, si son responsables, agregar o revocar delegados por DNI. Usá `seed.sql` sólo en una base descartable para cargar datos de demostración: vacía las tablas antes de insertar los ejemplos.
 
 ### 2. Backend
 

@@ -152,6 +152,9 @@ export async function render(contenedor, ctx) {
         <button type="button" class="menu-fila" data-ir="/voluntariado">
           ${icon('heart')}<span>Voluntariado e instituciones</span>${icon('chevron', 'chevron')}
         </button>
+        <button type="button" class="menu-fila" data-ir="/instituciones/gestion">
+          ${icon('town')}<span>Gestión institucional</span>${icon('chevron', 'chevron')}
+        </button>
         <button type="button" class="menu-fila" data-ir="/qr">
           ${icon('qr')}<span>Escanear QR de presencia</span>${icon('chevron', 'chevron')}
         </button>

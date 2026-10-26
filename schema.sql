@@ -42,6 +42,30 @@ CREATE TABLE IF NOT EXISTS instituciones (
     creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Personas autorizadas para gestionar una institución. El rol DELEGADO
+-- global de usuarios no concede acceso institucional por sí solo.
+CREATE TABLE IF NOT EXISTS institucion_membresias (
+    id SERIAL PRIMARY KEY,
+    institucion_id INT NOT NULL REFERENCES instituciones(id) ON DELETE CASCADE,
+    usuario_id INT NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+    rol VARCHAR(20) NOT NULL,
+    activo BOOLEAN NOT NULL DEFAULT TRUE,
+    asignado_por INT REFERENCES usuarios(id) ON DELETE SET NULL,
+    creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT chk_rol_membresia_institucional
+        CHECK (rol IN ('RESPONSABLE', 'DELEGADO')),
+    CONSTRAINT uq_membresia_institucion_usuario
+        UNIQUE (institucion_id, usuario_id)
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uq_institucion_responsable_activo
+    ON institucion_membresias (institucion_id)
+    WHERE rol = 'RESPONSABLE' AND activo = TRUE;
+
+CREATE INDEX IF NOT EXISTS idx_institucion_membresias_usuario
+    ON institucion_membresias (usuario_id, activo);
+
 -- ------------------------------------------------------------
 -- 3. TABLA: cupos_necesidad
 -- ------------------------------------------------------------
@@ -55,6 +79,7 @@ CREATE TABLE IF NOT EXISTS cupos_necesidad (
     prioridad VARCHAR(15) NOT NULL DEFAULT 'GENERAL',
     cupo_maximo INT NOT NULL CHECK (cupo_maximo > 0),
     cupo_actual INT NOT NULL DEFAULT 0,
+    pausado_manualmente BOOLEAN NOT NULL DEFAULT FALSE,
     activo BOOLEAN NOT NULL DEFAULT TRUE, -- false cuando se completa o se pausa
     creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
@@ -351,6 +376,15 @@ ALTER TABLE usuarios
     ADD COLUMN IF NOT EXISTS motivo_suspension TEXT NULL,
     ADD COLUMN IF NOT EXISTS password_reset_token VARCHAR(100),
     ADD COLUMN IF NOT EXISTS password_reset_expires TIMESTAMP;
+
+ALTER TABLE cupos_necesidad
+    ADD COLUMN IF NOT EXISTS pausado_manualmente BOOLEAN NOT NULL DEFAULT FALSE;
+
+UPDATE cupos_necesidad
+SET pausado_manualmente = TRUE
+WHERE activo = FALSE
+  AND cupo_actual < cupo_maximo
+  AND pausado_manualmente = FALSE;
 
 ALTER TABLE publicaciones_p2p
     ALTER COLUMN estado SET DEFAULT 'PENDIENTE_REVISION',
