@@ -121,6 +121,27 @@ test('need edits cannot lower capacity below help already registered', async () 
   }
 });
 
+test('institution panel returns monthly collaboration counts for the last twelve months', async () => {
+  const queryOriginal = db.query;
+  let query;
+  let params;
+  db.query = async (sql, values) => {
+    query = sql;
+    params = values;
+    return { rows: [] };
+  };
+  try {
+    await InstitucionModel.obtenerPanelUsuario(14);
+    assert.match(query, /generate_series\([\s\S]*INTERVAL '11 months'/);
+    assert.match(query, /n\.fecha_activacion >= meses\.mes/);
+    assert.match(query, /n\.fecha_activacion < meses\.mes \+ INTERVAL '1 month'/);
+    assert.match(query, /json_build_object\([\s\S]*'mes'[\s\S]*'colaboraciones'/);
+    assert.deepEqual(params, [14]);
+  } finally {
+    db.query = queryOriginal;
+  }
+});
+
 test('institution membership middleware denies cross-institution access', async () => {
   const InstitucionAcceso = require('../src/middlewares/institucionAcceso');
   const original = InstitucionModel.obtenerMembresiaActiva;

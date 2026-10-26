@@ -5,6 +5,7 @@ import { icon, esc, spinner, vacio, errorEstado, toast, cargarBoton, confirmar }
 import { navegar } from '../router.js';
 
 const PRIORIDADES = ['GENERAL', 'PRIORITARIA', 'URGENTE'];
+const periodosActividad = new Map();
 
 export async function render(contenedor, ctx) {
   contenedor.innerHTML = `<section class="pantalla">${spinner('Cargando tus instituciones…')}</section>`;
@@ -60,6 +61,7 @@ export async function render(contenedor, ctx) {
           ${kpi('users', inst.necesidades_abiertas, 'Pedidos abiertos')}
           ${kpi('checkcircle', `${cuposCubiertos}/${cuposTotal}`, 'Cupos cubiertos')}
         </div>
+        ${graficoActividad(inst)}
         <button type="button" class="btn btn-fantasma btn-sm" data-perfil="${esc(String(inst.id))}">${icon('eye')} Ver perfil público</button>
         <div class="seccion-cabecera mt-1"><h3>Necesidades</h3></div>
         ${inst.necesidades.length ? inst.necesidades.map((n) => formularioNecesidad(inst.id, n)).join('') : '<p class="campo-ayuda">Todavía no cargaste pedidos.</p>'}
@@ -117,6 +119,35 @@ export async function render(contenedor, ctx) {
     return `<div class="stat-card">${icon(icono)}<p class="stat-valor">${esc(String(valor ?? 0))}</p><p class="stat-etiqueta">${esc(etiqueta)}</p></div>`;
   }
 
+  function graficoActividad(inst) {
+    const actividad = Array.isArray(inst.actividad_mensual) ? inst.actividad_mensual : [];
+    const periodo = periodosActividad.get(String(inst.id)) || 6;
+    const meses = actividad.slice(-periodo);
+    const maximo = Math.max(1, ...meses.map((mes) => Number(mes.colaboraciones) || 0));
+    const total = meses.reduce((suma, mes) => suma + (Number(mes.colaboraciones) || 0), 0);
+    return `
+      <div class="panel mt-1" data-actividad="${esc(String(inst.id))}">
+        <div class="seccion-cabecera">
+          <div><h3>Ayuda recibida</h3><p class="campo-ayuda">${total} colaboraciones en los últimos ${periodo} meses</p></div>
+          <div class="fila" role="group" aria-label="Período de actividad">
+            ${[6, 12].map((cantidad) => `<button type="button" class="btn btn-sm ${periodo === cantidad ? 'btn-primario' : 'btn-fantasma'}" data-periodo="${cantidad}" aria-pressed="${periodo === cantidad}">${cantidad} meses</button>`).join('')}
+          </div>
+        </div>
+        <div class="mini-grafico mini-grafico-periodo" role="img" aria-label="Colaboraciones mensuales de los últimos ${periodo} meses: ${meses.map((mes) => `${mes.mes}: ${mes.colaboraciones}`).join(', ')}">
+          ${meses.map((mes) => {
+            const valor = Number(mes.colaboraciones) || 0;
+            const alto = Math.max(3, Math.round((valor / maximo) * 100));
+            return `<div class="mini-grafico-barra">
+              <em>${valor}</em>
+              <i style="height:${alto}%" title="${esc(mes.mes)}: ${valor} colaboraciones"></i>
+              <b>${esc(mes.mes)}</b>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>
+    `;
+  }
+
   async function procesarFormulario(event) {
     const form = event.target;
     if (!form.matches('[data-crear-necesidad], [data-editar-necesidad], [data-agregar-delegado]')) return;
@@ -150,6 +181,17 @@ export async function render(contenedor, ctx) {
   }
 
   async function procesarAccion(event) {
+    const botonPeriodo = event.target.closest('[data-periodo]');
+    if (botonPeriodo) {
+      const panel = botonPeriodo.closest('[data-actividad]');
+      if (!panel) return;
+      const id = panel.dataset.actividad;
+      const institucion = instituciones.find((item) => String(item.id) === id);
+      if (!institucion) return;
+      periodosActividad.set(id, Number(botonPeriodo.dataset.periodo));
+      panel.outerHTML = graficoActividad(institucion);
+      return;
+    }
     const botonPerfil = event.target.closest('[data-perfil]');
     if (botonPerfil) {
       navegar(`/instituciones/${encodeURIComponent(botonPerfil.dataset.perfil)}`);
