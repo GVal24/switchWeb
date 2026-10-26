@@ -47,7 +47,31 @@ class InstitucionModel {
          (SELECT COUNT(*)::int FROM cupos_necesidad c WHERE c.institucion_id = i.id) AS necesidades_total,
          (SELECT COUNT(*)::int FROM cupos_necesidad c WHERE c.institucion_id = i.id AND c.activo = TRUE) AS necesidades_abiertas,
          (SELECT COALESCE(SUM(c.cupo_maximo), 0)::int FROM cupos_necesidad c WHERE c.institucion_id = i.id) AS cupos_totales,
-         (SELECT COALESCE(SUM(c.cupo_actual), 0)::int FROM cupos_necesidad c WHERE c.institucion_id = i.id) AS cupos_cubiertos
+         (SELECT COALESCE(SUM(c.cupo_actual), 0)::int FROM cupos_necesidad c WHERE c.institucion_id = i.id) AS cupos_cubiertos,
+         (
+           SELECT COALESCE(
+             json_agg(
+               json_build_object(
+                 'mes', TO_CHAR(actividad.mes, 'TMMon YY'),
+                 'colaboraciones', actividad.total
+               ) ORDER BY actividad.mes
+             ),
+             '[]'::json
+           )
+           FROM (
+             SELECT meses.mes, COUNT(n.id)::int AS total
+             FROM generate_series(
+               date_trunc('month', CURRENT_DATE) - INTERVAL '11 months',
+               date_trunc('month', CURRENT_DATE),
+               INTERVAL '1 month'
+             ) AS meses(mes)
+             LEFT JOIN nexos_sociales n
+               ON n.institucion_id = i.id
+              AND n.fecha_activacion >= meses.mes
+              AND n.fecha_activacion < meses.mes + INTERVAL '1 month'
+             GROUP BY meses.mes
+           ) actividad
+         ) AS actividad_mensual
        FROM institucion_membresias m
        JOIN instituciones i ON i.id = m.institucion_id
        WHERE m.usuario_id = $1 AND m.activo = TRUE

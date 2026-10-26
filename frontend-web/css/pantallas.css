@@ -1855,6 +1855,14 @@ html[data-paleta="suave"] .pub-imagen-icono .icono {
   font-style: normal;
 }
 
+.mini-grafico-periodo {
+  overflow-x: auto;
+}
+
+.mini-grafico-periodo .mini-grafico-barra {
+  min-width: 2.4rem;
+}
+
 .distribucion {
   display: flex;
   flex-direction: column;

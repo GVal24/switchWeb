@@ -97,6 +97,10 @@ function construirBarra() {
 
   btnVolver.addEventListener('click', () => {
     const meta = rutaActual();
+    if (meta?.volverA) {
+      navegar(meta.volverA);
+      return;
+    }
     if (meta?.seccion) volver(meta.seccion);
     else volver();
   });
@@ -425,6 +429,7 @@ function registrarRutas() {
   });
   definirRuta('/instituciones/:id', () => import('./screens/perfil-institucion.js'), {
     titulo: 'Institución',
+    volverA: '/voluntariado',
     volver: true,
   });
   definirRuta('/admin', () => import('./screens/admin/dashboard.js'), {

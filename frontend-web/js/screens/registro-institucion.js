@@ -103,50 +103,17 @@ export async function render(contenedor) {
     editores[editores.length - 1]?.querySelector('input')?.focus();
   });
 
-  zona.addEventListener('input', (ev) => {
+  function actualizarCampoNecesidad(ev) {
     const campo = ev.target.dataset.campo;
     if (!campo) return;
     const editor = ev.target.closest('.necesidad-editor');
     const indice = Number(editor?.dataset.indice);
     if (!Number.isInteger(indice) || !necesidades[indice]) return;
     necesidades[indice][campo] = ev.target.value;
-  });
+  }
 
-  zona.addEventListener('click', (ev) => {
-    const editor = ev.target.closest('.necesidad-editor');
-    if (!editor) return;
-    const indice = Number(editor.dataset.indice);
-    const necesidad = necesidades[indice];
-    if (!necesidad) return;
-
-    const quitar = ev.target.closest('[data-quitar]');
-    if (quitar) {
-      if (necesidades.length === 1) {
-        toast('Tiene que quedar al menos una necesidad.', 'aviso');
-        return;
-      }
-      necesidades.splice(indice, 1);
-      pintarNecesidades();
-      return;
-    }
-
-    const prioridad = ev.target.closest('[data-prioridad]');
-    if (prioridad) {
-      necesidad.prioridad = prioridad.dataset.prioridad;
-      editor.querySelectorAll('[data-prioridad]').forEach((b) =>
-        b.setAttribute('aria-pressed', String(b.dataset.prioridad === necesidad.prioridad))
-      );
-      return;
-    }
-
-    const mas = ev.target.closest('[data-mas]');
-    const menos = ev.target.closest('[data-menos]');
-    if (mas || menos) {
-      const paso = mas ? 1 : -1;
-      necesidad.cupoMaximo = Math.min(99, Math.max(1, Number(necesidad.cupoMaximo) + paso));
-      editor.querySelector('[data-cupo-valor]').textContent = String(necesidad.cupoMaximo);
-    }
-  });
+  zona.addEventListener('input', actualizarCampoNecesidad);
+  zona.addEventListener('change', actualizarCampoNecesidad);
 
   function nuevaNecesidad() {
     return { titulo: '', descripcion: '', cupoMaximo: 1, prioridad: 'GENERAL' };
@@ -192,19 +159,39 @@ export async function render(contenedor) {
             </div>
             <div class="campo" style="margin-bottom:0">
               <span class="campo-etiqueta">Prioridad</span>
-              <div class="chips-fila" role="group" aria-label="Prioridad de la necesidad ${i + 1}">
+              <select class="campo-input" data-campo="prioridad" aria-label="Prioridad de la necesidad ${i + 1}">
                 ${PRIORIDADES.map(
                   (p) =>
-                    `<button type="button" class="chip chip-opcion prioridad-${p.valor.toLowerCase()}" data-prioridad="${
-                      p.valor
-                    }" aria-pressed="${n.prioridad === p.valor}">${p.etiqueta}</button>`
+                    `<option value="${p.valor}" ${n.prioridad === p.valor ? 'selected' : ''}>${p.etiqueta}</option>`
                 ).join('')}
-              </div>
+              </select>
             </div>
           </div>
         </div>`
       )
       .join('');
+
+    zona.querySelectorAll('.necesidad-editor').forEach((editor) => {
+      const indice = Number(editor.dataset.indice);
+      editor.querySelector('[data-quitar]').addEventListener('click', () => {
+        if (necesidades.length === 1) {
+          toast('Tiene que quedar al menos una necesidad.', 'aviso');
+          return;
+        }
+        necesidades.splice(indice, 1);
+        pintarNecesidades();
+      });
+
+      editor.querySelector('[data-mas]').addEventListener('click', () => actualizarCupo(indice, 1, editor));
+      editor.querySelector('[data-menos]').addEventListener('click', () => actualizarCupo(indice, -1, editor));
+    });
+  }
+
+  function actualizarCupo(indice, paso, editor) {
+    const necesidad = necesidades[indice];
+    if (!necesidad) return;
+    necesidad.cupoMaximo = Math.min(99, Math.max(1, Number(necesidad.cupoMaximo) + paso));
+    editor.querySelector('[data-cupo-valor]').textContent = String(necesidad.cupoMaximo);
   }
 
   const mostrarError = (texto) => {

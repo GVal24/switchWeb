@@ -28,6 +28,7 @@ export function definirRuta(patron, cargador, meta = {}) {
     requiereSesion: !!meta.requiereSesion,
     requiereAdmin: !!meta.requiereAdmin,
     volver: meta.volver !== false,
+    volverA: meta.volverA || null,
   });
 }
 
@@ -125,6 +126,7 @@ async function renderizar(info) {
     seccion: info.ruta.seccion,
     titulo: info.ruta.titulo,
     volver: info.ruta.volver,
+    volverA: info.ruta.volverA,
   };
 
   if (opciones.alNavegar) opciones.alNavegar(actual);
