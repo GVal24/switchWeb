@@ -172,9 +172,6 @@ async function recuperarPassword() {
 
   try {
     const solicitud = await API.solicitarResetPassword({ dni });
-    if (solicitud.codigoMock) {
-      toast(`Modo de prueba: el código es ${solicitud.codigoMock}.`, 'info');
-    }
 
     const codigo = await pedirDatoReset({
       titulo: 'Verificar teléfono',
@@ -184,6 +181,7 @@ async function recuperarPassword() {
       ayuda: 'Si el DNI está registrado, enviamos un código al teléfono asociado.',
       autocompletar: 'one-time-code',
       maxLength: 6,
+      codigoMock: solicitud.codigoMock,
     });
     if (codigo === null) return;
 
@@ -233,6 +231,7 @@ function pedirDatoReset({
   tipo = 'text',
   inputmode,
   ayuda,
+  codigoMock = '',
   autocompletar = 'off',
   maxLength = 100,
 }) {
@@ -242,6 +241,7 @@ function pedirDatoReset({
     titulo,
     icono: 'lock',
     html: `<p class="modal-texto">${esc(ayuda || '')}</p>
+      ${codigoMock ? `<div class="otp-mock">${icon('flash')}<div>Modo de prueba: tu código es <strong>${esc(codigoMock)}</strong></div></div>` : ''}
       <label class="campo" for="${id}">
         <span class="campo-etiqueta">${esc(etiqueta)}</span>
         <input class="campo-input" id="${id}" type="${tipoInput}"
