@@ -9,7 +9,7 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
-    "test": "node --test test/password-reset.test.js test/reporte.test.js test/moderacion-service.test.js test/institucion-model.test.js"
+    "test": "node --test test/password-reset.test.js test/reporte.test.js test/moderacion-service.test.js test/institucion-model.test.js test/admin-model.test.js"
   },
   "keywords": [
     "switch",

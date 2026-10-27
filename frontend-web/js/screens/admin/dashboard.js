@@ -10,10 +10,21 @@ import {
 } from '../../ui.js';
 import { navegar } from '../../router.js';
 
-const ESFUERZOS = [
-  { clave: 'SIMPLE', etiqueta: 'Simple' },
-  { clave: 'MEDIO', etiqueta: 'Medio' },
-  { clave: 'ALTO', etiqueta: 'Alto' },
+const TIPOS_INSTITUCION = {
+  COMEDOR: 'Comedor',
+  HOGAR: 'Hogar',
+  BIBLIOTECA: 'Biblioteca',
+  CENTRO_DIA: 'Centro de día',
+  OTRO: 'Otros',
+};
+
+const COLORES_TORTA = [
+  'var(--verde)',
+  'var(--azul)',
+  'var(--naranja)',
+  '#8b5cf6',
+  '#ef4444',
+  '#14b8a6',
 ];
 
 export async function render(contenedor) {
@@ -102,7 +113,7 @@ export async function render(contenedor) {
   function vista(datos, pendientes) {
     const meses = Array.isArray(datos.meses) ? datos.meses : [];
     const actividad = Array.isArray(datos.actividadMensual) ? datos.actividadMensual : [];
-    const distribucion = datos.esfuerzoDistribucion || {};
+    const ayudaInstituciones = Array.isArray(datos.ayudaInstituciones) ? datos.ayudaInstituciones : [];
 
     return `
       <div class="kpis">
@@ -129,16 +140,10 @@ export async function render(contenedor) {
 
       <div class="panel mt-1">
         <div class="seccion-cabecera" style="margin-bottom:0.2rem">
-          <h2>Publicaciones por esfuerzo</h2>
+          <h2>Ayuda brindada a instituciones</h2>
         </div>
-        ${graficoLineas(
-          ESFUERZOS.map((esfuerzo) => ({
-            etiqueta: esfuerzo.etiqueta,
-            valor: Number(distribucion[esfuerzo.clave]) || 0,
-          })),
-          'Porcentaje de publicaciones por nivel de esfuerzo',
-          '%'
-        )}
+        <p class="campo-ayuda">Colaboraciones registradas, agrupadas por tipo de institución (histórico).</p>
+        ${graficoTortaInstituciones(ayudaInstituciones)}
       </div>
 
       <div class="seccion-cabecera mt-2">
@@ -155,6 +160,54 @@ export async function render(contenedor) {
       </div>
 
       <p class="campo-ayuda" style="text-align:center;margin-top:0.9rem">Las métricas se calculan en vivo desde la base de datos.</p>
+    `;
+  }
+
+  function graficoTortaInstituciones(ayuda) {
+    const segmentos = ayuda
+      .map((item) => ({
+        tipo: String(item.tipo || 'OTRO'),
+        etiqueta: Object.hasOwn(TIPOS_INSTITUCION, item.tipo)
+          ? TIPOS_INSTITUCION[item.tipo]
+          : item.tipo || 'Otros',
+        valor: Math.max(0, Number(item.colaboraciones) || 0),
+      }))
+      .filter((item) => item.valor > 0);
+    const total = segmentos.reduce((suma, item) => suma + item.valor, 0);
+    let inicio = 0;
+    const gradientes = segmentos.map((item, indice) => {
+      const fin = inicio + (item.valor / total) * 100;
+      const color = COLORES_TORTA[indice % COLORES_TORTA.length];
+      const segmento = `${color} ${inicio}% ${fin}%`;
+      inicio = fin;
+      return segmento;
+    });
+
+    return `
+      <div class="admin-torta-contenedor">
+        <div
+          class="admin-torta ${total ? '' : 'sin-datos'}"
+          role="img"
+          aria-label="${esc(total
+            ? `Distribución de ${total} colaboraciones registradas: ${segmentos.map((item) => `${item.etiqueta}, ${item.valor} (${((item.valor / total) * 100).toFixed(1)}%)`).join('; ')}`
+            : 'Aún no hay colaboraciones registradas en instituciones.')}"
+          style="background:conic-gradient(${gradientes.length ? gradientes.join(', ') : 'var(--borde) 0% 100%'})"
+        >
+          <span><strong>${total}</strong><small>colaboraciones</small></span>
+        </div>
+        <ul class="admin-torta-leyenda">
+          ${segmentos.length
+            ? segmentos.map((item, indice) => `
+              <li>
+                <i style="--color-segmento:${COLORES_TORTA[indice % COLORES_TORTA.length]}"></i>
+                <span>${esc(item.etiqueta)}</span>
+                <strong>${item.valor}</strong>
+                <small>${((item.valor / total) * 100).toFixed(1)}%</small>
+              </li>
+            `).join('')
+            : '<li class="admin-torta-vacia">Todavía no hay colaboraciones registradas.</li>'}
+        </ul>
+      </div>
     `;
   }
 

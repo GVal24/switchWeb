@@ -55,13 +55,15 @@ class AdminModel {
       FROM intercambios;
     `;
 
-    // Distribución porcentual de publicaciones por nivel de esfuerzo
-    const queryEsfuerzo = `
+    // Colaboraciones registradas en instituciones, agrupadas por tipo
+    const queryAyudaInstituciones = `
       SELECT 
-        p.nivel_esfuerzo,
-        ROUND(100.0 * COUNT(*) / SUM(COUNT(*)) OVER (), 1)::float AS porcentaje
-      FROM publicaciones_p2p p
-      GROUP BY p.nivel_esfuerzo;
+        COALESCE(NULLIF(BTRIM(i.tipo), ''), 'OTRO') AS tipo,
+        COUNT(n.id)::int AS colaboraciones
+      FROM nexos_sociales n
+      JOIN instituciones i ON i.id = n.institucion_id
+      GROUP BY COALESCE(NULLIF(BTRIM(i.tipo), ''), 'OTRO')
+      ORDER BY colaboraciones DESC, tipo ASC;
     `;
 
     const [
@@ -71,7 +73,7 @@ class AdminModel {
       resReportes,
       resMensual,
       resTasa,
-      resEsfuerzo
+      resAyudaInstituciones
     ] = await Promise.all([
       db.query(queryUsuariosActivos),
       db.query(queryTruequesMes),
@@ -79,13 +81,8 @@ class AdminModel {
       db.query(queryReportesPendientes),
       db.query(queryMensual),
       db.query(queryTasaEfectividad),
-      db.query(queryEsfuerzo)
+      db.query(queryAyudaInstituciones)
     ]);
-
-    const esfuerzoDistribucion = {};
-    for (const fila of resEsfuerzo.rows) {
-      esfuerzoDistribucion[fila.nivel_esfuerzo] = fila.porcentaje ?? 0;
-    }
 
     return {
       usuariosActivos: resUsuarios.rows[0]?.total || 0,
@@ -95,7 +92,10 @@ class AdminModel {
       tasaEfectividad: `${resTasa.rows[0]?.tasa || 0}%`,
       meses: resMensual.rows.map(r => r.mes.trim()),
       actividadMensual: resMensual.rows.map(r => r.total),
-      esfuerzoDistribucion
+      ayudaInstituciones: resAyudaInstituciones.rows.map((fila) => ({
+        tipo: fila.tipo,
+        colaboraciones: fila.colaboraciones,
+      })),
     };
   }
 }

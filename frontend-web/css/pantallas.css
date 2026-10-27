@@ -1904,6 +1904,89 @@ html[data-paleta="suave"] .pub-imagen-icono .icono {
   stroke-width: 3;
 }
 
+.admin-torta-contenedor {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  padding: 1rem 0 0.4rem;
+}
+
+.admin-torta {
+  width: min(13rem, 55vw);
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border-radius: 50%;
+}
+
+.admin-torta.sin-datos {
+  background: conic-gradient(var(--borde) 0% 100%);
+}
+
+.admin-torta > span {
+  width: 58%;
+  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--tarjeta);
+}
+
+.admin-torta > span strong {
+  font-size: 1.5rem;
+  line-height: 1.2;
+}
+
+.admin-torta > span small {
+  color: var(--texto-suave);
+  font-size: 0.68rem;
+  text-align: center;
+}
+
+.admin-torta-leyenda {
+  list-style: none;
+  display: grid;
+  gap: 0.55rem;
+  min-width: min(13rem, 100%);
+  margin: 0;
+  padding: 0;
+}
+
+.admin-torta-leyenda li {
+  display: grid;
+  grid-template-columns: 0.7rem 1fr auto auto;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.76rem;
+}
+
+.admin-torta-leyenda li > i {
+  width: 0.65rem;
+  height: 0.65rem;
+  border-radius: 50%;
+  background: var(--color-segmento);
+}
+
+.admin-torta-leyenda li > span,
+.admin-torta-leyenda li > small {
+  color: var(--texto-suave);
+}
+
+.admin-torta-leyenda li > small {
+  min-width: 3.2rem;
+  text-align: right;
+}
+
+.admin-torta-leyenda .admin-torta-vacia {
+  display: block;
+  color: var(--texto-suave);
+}
+
 .distribucion {
   display: flex;
   flex-direction: column;
