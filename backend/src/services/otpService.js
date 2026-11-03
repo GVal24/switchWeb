@@ -119,12 +119,12 @@ class OtpService {
     const {
       cadena: proveedores,
       problemas,
-      usandoMock,
     } = obtenerCadenaDeProveedores();
-    const cadena =
-      config.esProduccion && propositoNormalizado === PROPOSITO_RESTABLECIMIENTO
-        ? proveedores.filter((proveedor) => proveedor.nombre !== 'MOCK')
-        : proveedores;
+    const cadena = proveedores.filter(
+      (proveedor) =>
+        proveedor.nombre !== 'MOCK' || (!config.esProduccion && config.mockHabilitado)
+    );
+    const mockSolicitado = proveedores.some((proveedor) => proveedor.nombre === 'MOCK');
 
     for (const aviso of problemas) {
       // eslint-disable-next-line no-console
@@ -132,9 +132,13 @@ class OtpService {
     }
 
     if (cadena.length === 0) {
+      const mensajeMockNoDisponible =
+        mockSolicitado && (config.esProduccion || !config.mockHabilitado)
+          ? 'El modo de prueba OTP sólo funciona con el backend local. Para enviar códigos desde la aplicación publicada, configurá un proveedor SMS.'
+          : null;
       throw new ForbiddenError(
-        'El servicio de verificación por mensaje no está disponible en este ' +
-          'momento. Intentá más tarde.'
+        mensajeMockNoDisponible ||
+          'El servicio de verificación por mensaje no está disponible en este momento. Intentá más tarde.'
       );
     }
 
@@ -209,7 +213,7 @@ class OtpService {
       // El código sólo vuelve al cliente en modo mock. Con un proveedor
       // real, este campo nunca se completa: el código sale sólo por el
       // teléfono de la persona.
-      ...(usandoMock && config.mockHabilitado && !config.esProduccion
+      ...(proveedorUsado.nombre === 'MOCK' && config.mockHabilitado && !config.esProduccion
         ? { codigoMock: codigo, esMock: true }
         : {}),
     };
