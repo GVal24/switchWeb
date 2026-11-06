@@ -41,6 +41,20 @@ export async function render(contenedor) {
     return;
   }
 
+  // Cuenta activa pero sin Nexo Social: puede ver el catálogo, pero no
+  // publicar hasta colaborar en una institución.
+  if (Store.usuario?.nexoActivo === false) {
+    contenedor.innerHTML = `
+      <section class="pantalla">
+        <div class="banner banner-info">${icon('info')}<div><strong>Todavía no podés publicar</strong><p>Tu cuenta está activa, pero necesitás un Nexo Social vigente. Se activa colaborando en una institución comunitaria.</p></div></div>
+        <button type="button" class="btn btn-primario btn-block mt-1" data-voluntariado>${icon('heart')} Activar mi Nexo Social</button>
+        <button type="button" class="btn btn-fantasma btn-block mt-1" data-perfil>Volver a mi perfil</button>
+      </section>`;
+    contenedor.querySelector('[data-voluntariado]').addEventListener('click', () => navegar('/voluntariado'));
+    contenedor.querySelector('[data-perfil]').addEventListener('click', () => navegar('/perfil'));
+    return;
+  }
+
   contenedor.innerHTML = `
     <section class="pantalla pantalla-publicar">
       <div class="banner banner-info" style="margin-bottom:0.8rem">

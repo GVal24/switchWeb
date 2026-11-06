@@ -148,6 +148,8 @@ ORIGENES_PERMITIDOS=       # opcional; restringe CORS si la web se sirve desde o
 
 La opción **Recuperarla** permite cambiar la contraseña mediante un código enviado al teléfono registrado. Para enviar códigos reales, configurá un proveedor de SMS o WhatsApp y una clave `OTP_HMAC_SECRET` secreta. `MOCK` es para desarrollo local. Los cambios necesarios de base de datos están incluidos en `schema.sql`.
 
+Para una **demo en producción** sin proveedor SMS, se puede habilitar el OTP mock con `OTP_PERMITIR_MOCK_PRODUCCION=true`: el código aparece en la pantalla de registro. Es inseguro para uso real, así que conviene limitarlo con `OTP_MOCK_TELEFONOS` (lista separada por comas) y apagarlo después de la demo.
+
 ### 3. Web
 
 Con el backend corriendo en el puerto 3000, la web se sirve en:

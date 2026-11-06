@@ -2,6 +2,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const UsuarioModel = require('../models/usuarioModel');
 const LegalModel = require('../models/legalModel');
+const VoluntariadoModel = require('../models/voluntariadoModel');
 const legales = require('../content/legales');
 const { normalizarTelefono } = require('./providers/otpProvider');
 const { ValidationError, NotFoundError, ConflictError, UnauthorizedError, ForbiddenError } = require('../utils/customErrors');
@@ -192,12 +193,17 @@ class AuthService {
       { expiresIn: '7d' }
     );
 
+    // El Nexo Social es lo que habilita operar en el catálogo. Sin él se
+    // puede mirar y abrir publicaciones, pero no publicar ni intercambiar.
+    const nexoActivo = await VoluntariadoModel.verificarNexoSocialActivo(usuario.id);
+
     return {
       ...usuario,
       token,
       // El frontend usa esto para avisar que la cuenta está en modo lectura
       habilitado: !suspensionVigente,
       suspensionVigente,
+      nexoActivo,
       ...(suspensionVigente ? { suspendidoHasta } : {})
     };
   }

@@ -120,9 +120,24 @@ class OtpService {
       cadena: proveedores,
       problemas,
     } = obtenerCadenaDeProveedores();
+
+    // En local el mock está permitido por defecto. En producción sólo si se
+    // habilitó explícitamente y, opcionalmente, si el teléfono está en la
+    // allowlist. Así una demo controlada no abre el registro a cualquiera.
+    const mockPermitido = (() => {
+      if (!config.esProduccion) return config.mockHabilitado;
+      if (!config.permitirMockProduccion) return false;
+      if (!config.telefonosMockProduccion.length) return true;
+
+      const coincide = (permitido) => {
+        const p = String(permitido).replace(/\D/g, '');
+        return Boolean(p) && (tel === p || tel.endsWith(p) || p.endsWith(tel));
+      };
+      return config.telefonosMockProduccion.some(coincide);
+    })();
+
     const cadena = proveedores.filter(
-      (proveedor) =>
-        proveedor.nombre !== 'MOCK' || (!config.esProduccion && config.mockHabilitado)
+      (proveedor) => proveedor.nombre !== 'MOCK' || mockPermitido
     );
     const mockSolicitado = proveedores.some((proveedor) => proveedor.nombre === 'MOCK');
 
@@ -132,10 +147,12 @@ class OtpService {
     }
 
     if (cadena.length === 0) {
-      const mensajeMockNoDisponible =
-        mockSolicitado && (config.esProduccion || !config.mockHabilitado)
-          ? 'El modo de prueba OTP sólo funciona con el backend local. Para enviar códigos desde la aplicación publicada, configurá un proveedor SMS.'
-          : null;
+      let mensajeMockNoDisponible = null;
+      if (mockSolicitado && !mockPermitido) {
+        mensajeMockNoDisponible = config.esProduccion
+          ? 'El registro con código de prueba está desactivado en producción. Configurá un proveedor SMS/WhatsApp o habilitá OTP_PERMITIR_MOCK_PRODUCCION para una demo controlada.'
+          : 'El modo de prueba OTP está desactivado. Configurá un proveedor real o habilitá OTP_MOCK_HABILITADO.';
+      }
       throw new ForbiddenError(
         mensajeMockNoDisponible ||
           'El servicio de verificación por mensaje no está disponible en este momento. Intentá más tarde.'
@@ -212,8 +229,9 @@ class OtpService {
       maxIntentos: registro.max_intentos,
       // El código sólo vuelve al cliente en modo mock. Con un proveedor
       // real, este campo nunca se completa: el código sale sólo por el
-      // teléfono de la persona.
-      ...(proveedorUsado.nombre === 'MOCK' && config.mockHabilitado && !config.esProduccion
+      // teléfono de la persona. En producción esto ocurre únicamente si se
+      // habilitó OTP_PERMITIR_MOCK_PRODUCCION a propósito.
+      ...(proveedorUsado.nombre === 'MOCK' && mockPermitido
         ? { codigoMock: codigo, esMock: true }
         : {}),
     };

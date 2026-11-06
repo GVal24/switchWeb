@@ -17,9 +17,7 @@ import {
   esfuerzo,
   imagenPublicacion,
   idPublicacion,
-  idOferente,
   nombreOferente,
-  fecha,
   debounce,
 } from '../ui.js';
 
@@ -93,6 +91,19 @@ export async function render(contenedor) {
           </button>
         </div>
       </header>
+
+      ${
+        Store.sesionActiva && Store.usuario?.nexoActivo === false
+          ? `<div class="banner banner-info mt-1">
+              ${icon('info')}
+              <div>
+                <strong>Tu cuenta está activa, pero falta tu Nexo Social</strong>
+                <p>Podés mirar y abrir publicaciones. Para publicar, proponer trueques o escribir por chat, activá tu Nexo colaborando en una institución.</p>
+                <button type="button" class="btn btn-secundario btn-sm mt-1" data-activar-nexo>${icon('heart')} Activar mi Nexo Social</button>
+              </div>
+            </div>`
+          : ''
+      }
 
       <div class="mt-1">
         <p class="campo-etiqueta" style="margin-bottom:0.3rem">
@@ -282,6 +293,10 @@ export async function render(contenedor) {
       navegar('/login?volver=/catalogo')
     );
 
+  contenedor
+    .querySelector('[data-activar-nexo]')
+    ?.addEventListener('click', () => navegar('/voluntariado'));
+
   // Publicar.
   const botonPublicar = contenedor.querySelector('#cat-publicar');
 
@@ -291,6 +306,15 @@ export async function render(contenedor) {
         'Tu cuenta está suspendida: no podés publicar por ahora.',
         'aviso'
       );
+      return;
+    }
+
+    if (Store.usuario?.nexoActivo === false) {
+      toast(
+        'Para publicar necesitás activar tu Nexo Social colaborando en una institución.',
+        'aviso'
+      );
+      navegar('/voluntariado');
       return;
     }
 
@@ -398,13 +422,10 @@ export async function render(contenedor) {
       return;
     }
 
-    // CORRECCIÓN: esperar a que todas las tarjetas terminen de generarse.
-    const tarjetasHTML = await Promise.all(
-      publicaciones.map((pub) => tarjeta(pub))
-    );
+    const tarjetasHTML = publicaciones.map((pub) => tarjeta(pub));
 
     // Evitar mostrar resultados viejos si hubo otra búsqueda mientras
-    // se consultaban los perfiles públicos.
+    // se armaban las tarjetas.
     if (!contenedor.isConnected || resultados !== contenedor.querySelector('#cat-resultados')) {
       return;
     }
@@ -425,21 +446,6 @@ export async function render(contenedor) {
         Tocá una para ver el detalle.
       </p>
     `;
-
-    // Abrir perfiles de usuarios.
-    resultados.querySelectorAll('[data-ver-usuario]').forEach((btn) => {
-      btn.addEventListener('click', (ev) => {
-        ev.preventDefault();
-        ev.stopPropagation();
-
-        // No exponer identificadores de otros usuarios en la navegación.
-        if (Store.sesionActiva) {
-          navegar('/perfil', { reemplazar: true });
-        } else {
-          navegar('/login?volver=/catalogo');
-        }
-      });
-    });
 
     anunciar(`Se muestran ${publicaciones.length} publicaciones.`);
   }
@@ -462,31 +468,12 @@ export async function render(contenedor) {
   }
 
   // Generar tarjeta de publicación.
-  async function tarjeta(pub) {
+  function tarjeta(pub) {
     const id = idPublicacion(pub);
     const nivel = esfuerzo(pub.nivel_esfuerzo);
     const tipo = String(pub.tipo_item || 'OBJETO').toUpperCase();
     const calif = Number(pub.oferente_calificacion);
     const resenas = Number(pub.oferente_resenas);
-    const uid = idOferente(pub);
-
-    // Información básica por defecto.
-    let fechaMiembro = 'Vecino';
-
-    // Consultar fecha de membresía únicamente con sesión activa.
-    if (Store.sesionActiva && uid) {
-      try {
-        const perfil = await API.perfilPublico(uid);
-
-        fechaMiembro = perfil?.miembro_desde
-          ? `Vecino desde ${esc(fecha(perfil.miembro_desde))}`
-          : 'Vecino';
-      } catch (e) {
-        // Si falla la consulta, no bloquear la tarjeta.
-        fechaMiembro = 'Vecino';
-      }
-    }
-
     const nombreUsuario = nombreOferente(pub);
 
     return `
@@ -521,27 +508,16 @@ export async function render(contenedor) {
           </div>
 
           <div class="pub-pie">
-            <button
-              type="button"
-              class="pub-dueno"
-              data-ver-usuario="${esc(uid ?? '')}"
-              style="border:0;background:none;padding:0;text-align:left;cursor:pointer"
-            >
+            <span class="pub-dueno">
               ${avatar(nombreUsuario)}
               <span>${esc(nombreUsuario)}</span>
-            </button>
+            </span>
 
             ${
               Number.isFinite(calif) && resenas > 0
                 ? `<span class="chip" title="${esc(
                     String(resenas)
                   )} reseñas">${icon('star')}${calif.toFixed(1)}</span>`
-                : ''
-            }
-
-            ${
-              fechaMiembro
-                ? `<span class="texto-suave texto-chico">${fechaMiembro}</span>`
                 : ''
             }
           </div>

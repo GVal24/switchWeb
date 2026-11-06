@@ -117,9 +117,7 @@ export async function render(contenedor, ctx) {
           ${avatar(dueno, 'avatar-lg')}
           <div class="crece">
             <div class="dueno-nombre-fila">
-              <button type="button" class="dueno-nombre" data-ver-usuario="${esc(duenoId)}" style="border:0;background:none;padding:0;text-align:left;cursor:pointer;color:inherit;font-weight:inherit;">
-                ${esc(dueno)}${esMia ? ' (vos)' : ''}
-              </button>
+              <span class="dueno-nombre">${esc(dueno)}${esMia ? ' (vos)' : ''}</span>
               ${
                 Store.sesionActiva && !Store.suspendido && !esMia && duenoId
                   ? `<button type="button" class="icon-btn reporte-usuario" data-reportar-usuario aria-label="Reportar a ${esc(
@@ -154,13 +152,19 @@ export async function render(contenedor, ctx) {
   const acciones = contenedor.querySelector('#detalle-acciones');
   contenedor.querySelector('[data-volver-cat]').addEventListener('click', () => navegar('/catalogo'));
 
-  contenedor.querySelector('[data-ver-usuario]')?.addEventListener('click', (e) => {
-    e.stopPropagation();
-    if (duenoId) navegar(`/usuario/${encodeURIComponent(duenoId)}`);
-  });
   contenedor.querySelector('[data-reportar-usuario]')?.addEventListener('click', () =>
     reportarUsuario(duenoId, dueno)
   );
+
+  // Sugerir esfuerzo no es una operación de intercambio: se permite con el
+  // Nexo vencido. Sin sesión, en cambio, se pide ingresar.
+  contenedor.querySelector('#btn-sugerir')?.addEventListener('click', () => {
+    if (!Store.sesionActiva) {
+      navegar(`/login?volver=${encodeURIComponent(ctx.ruta.hash)}`);
+      return;
+    }
+    sugerir(pub);
+  });
 
   if (esMia) {
     aviso.innerHTML = `<div class="banner banner-info">${icon('info')}<div><strong>Esta publicación es tuya</strong><p>No podés proponerte un trueque a vos mismo. Podés ver el estado de tus intercambios.</p></div></div>`;
@@ -197,6 +201,15 @@ export async function render(contenedor, ctx) {
     return;
   }
 
+  // Cuenta activa pero sin Nexo Social: puede mirar y abrir el catálogo,
+  // pero no publicar, proponer ni escribir. Se le explica cómo activarlo.
+  if (Store.usuario?.nexoActivo === false) {
+    aviso.innerHTML = `<div class="banner banner-info">${icon('info')}<div><strong>Tu cuenta está activa, pero falta tu Nexo Social</strong><p>Podés mirar y abrir publicaciones. Para proponer trueques o escribir por chat, primero activá tu Nexo colaborando en una institución.</p></div></div>`;
+    acciones.innerHTML = `<button type="button" class="btn btn-primario btn-block" data-voluntariado>${icon('heart')} Activar mi Nexo Social</button>`;
+    acciones.querySelector('[data-voluntariado]').addEventListener('click', () => navegar('/voluntariado'));
+    return;
+  }
+
   acciones.innerHTML = `
     <button type="button" class="btn btn-primario btn-block btn-lg" id="btn-proponer">${icon('swap')} Proponer un trueque</button>
     <button type="button" class="btn btn-secundario btn-block" id="btn-chat">${icon('message')} Enviar un mensaje</button>
@@ -208,8 +221,6 @@ export async function render(contenedor, ctx) {
     navegar(`/chat/${encodeURIComponent(duenoId)}?nombre=${encodeURIComponent(dueno)}`)
   );
   acciones.querySelector('#btn-reportar').addEventListener('click', () => reportar(pub, dueno));
-
-  contenedor.querySelector('#btn-sugerir')?.addEventListener('click', () => sugerir(pub));
 
   async function abrirPropuesta(publicacion) {
     const { cuerpo, cerrar } = hoja({

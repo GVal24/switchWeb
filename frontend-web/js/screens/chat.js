@@ -26,6 +26,8 @@ export async function render(contenedor, ctx) {
 
   const receptorId = ctx.params.receptorId;
   const nombre = ctx.query.get('nombre') || (String(receptorId).startsWith('inst_') ? 'Institución' : 'Vecino de Switch');
+  // Con el Nexo vencido o inexistente se puede leer, pero no escribir.
+  const sinNexo = Store.usuario?.nexoActivo === false;
   const receptorEsUsuario =
     !Store.suspendido &&
     /^\d+$/.test(String(receptorId)) &&
@@ -58,13 +60,15 @@ export async function render(contenedor, ctx) {
       ${
         Store.suspendido
           ? `<div class="banner banner-aviso">${icon('alert')}<div><strong>Cuenta suspendida</strong><p>Podés leer la conversación, pero no enviar mensajes hasta que se resuelva.</p></div></div>`
-          : ''
+          : sinNexo
+            ? `<div class="banner banner-info">${icon('info')}<div><strong>Falta tu Nexo Social</strong><p>Podés leer la conversación, pero para escribir necesitás activar tu Nexo colaborando en una institución.</p><button type="button" class="btn btn-secundario btn-sm mt-1" data-voluntariado>${icon('heart')} Activar mi Nexo Social</button></div></div>`
+            : ''
       }
 
       <div id="chat-zona" aria-live="polite" aria-busy="true">${spinner('Cargando mensajes…')}</div>
 
       <div class="chat-compositor" ${
-        Store.suspendido ? 'aria-hidden="true" style="display:none"' : ''
+        Store.suspendido || sinNexo ? 'aria-hidden="true" style="display:none"' : ''
       }>
         <textarea class="campo-input" id="chat-texto" rows="1" maxlength="1000" placeholder="Escribí un mensaje…" aria-label="Mensaje para ${esc(
           nombre
@@ -84,9 +88,14 @@ export async function render(contenedor, ctx) {
     reportarUsuario(receptorId, nombre)
   );
 
-  if (Store.suspendido) {
+  if (Store.suspendido || sinNexo) {
     ayuda.hidden = true;
+    ayuda.style.display = 'none';
   }
+
+  contenedor.querySelector('[data-voluntariado]')?.addEventListener('click', () =>
+    navegar('/voluntariado')
+  );
 
   const ajustarAltura = () => {
     if (!texto) return;
@@ -177,7 +186,7 @@ export async function render(contenedor, ctx) {
   }
 
   async function mandar() {
-    if (enviando || Store.suspendido) return;
+    if (enviando || Store.suspendido || sinNexo) return;
     const contenido = texto.value.trim();
     if (!contenido) return;
     enviando = true;

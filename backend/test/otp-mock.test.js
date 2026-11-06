@@ -28,6 +28,8 @@ const originalMockEnviar = REGISTRO_PROVEEDORES.MOCK.enviar;
 const originalesConfig = {
   esProduccion: config.esProduccion,
   mockHabilitado: config.mockHabilitado,
+  permitirMockProduccion: config.permitirMockProduccion,
+  telefonosMockProduccion: config.telefonosMockProduccion,
 };
 const originalProveedor = process.env.OTP_PROVEEDOR;
 
@@ -69,6 +71,8 @@ test('local mock returns the OTP code for registration and password recovery', a
 test('production never claims a mock OTP was sent or returns its code', async () => {
   config.esProduccion = true;
   config.mockHabilitado = true;
+  config.permitirMockProduccion = false;
+  config.telefonosMockProduccion = [];
   const creacionesAntes = creaciones;
 
   await assert.rejects(
@@ -78,11 +82,52 @@ test('production never claims a mock OTP was sent or returns its code', async ()
     }),
     (error) => {
       assert.equal(error.statusCode, 403);
-      assert.match(error.message, /sólo funciona con el backend local/);
+      assert.match(error.message, /OTP_PERMITIR_MOCK_PRODUCCION/);
       return true;
     }
   );
   assert.equal(creaciones, creacionesAntes);
+});
+
+test('production mock only works when explicitly enabled', async () => {
+  config.esProduccion = true;
+  config.mockHabilitado = true;
+  config.permitirMockProduccion = true;
+  config.telefonosMockProduccion = [];
+
+  const resultado = await OtpService.solicitar({
+    telefono: '11 2345 6789',
+    proposito: 'REGISTRO',
+  });
+
+  assert.match(resultado.codigoMock, /^\d{6}$/);
+  assert.equal(resultado.esMock, true);
+});
+
+test('production mock allowlist rejects phones that are not listed', async () => {
+  config.esProduccion = true;
+  config.mockHabilitado = true;
+  config.permitirMockProduccion = true;
+  config.telefonosMockProduccion = ['1198765432'];
+  const creacionesAntes = creaciones;
+
+  await assert.rejects(
+    OtpService.solicitar({
+      telefono: '11 2345 6789',
+      proposito: 'REGISTRO',
+    }),
+    (error) => {
+      assert.equal(error.statusCode, 403);
+      return true;
+    }
+  );
+  assert.equal(creaciones, creacionesAntes);
+
+  const permitido = await OtpService.solicitar({
+    telefono: '+54 9 11 9876-5432',
+    proposito: 'REGISTRO',
+  });
+  assert.match(permitido.codigoMock, /^\d{6}$/);
 });
 
 test.after(() => {

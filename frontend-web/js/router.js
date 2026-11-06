@@ -90,6 +90,15 @@ export function analizar(hash = location.hash) {
 
 async function manejarCambio() {
   const info = analizar();
+
+  // Privacidad: no existe una pantalla de perfil ajeno y no queremos que la
+  // barra de direcciones muestre /usuario/<id>. Cualquier enlace viejo o
+  // escrito a mano se reemplaza por el perfil propio.
+  if (info.camino.startsWith('/usuario/')) {
+    navegar('/perfil', { reemplazar: true });
+    return;
+  }
+
   if (!info.ruta) {
     navegar(RUTA_INICIAL, { reemplazar: true });
     return;

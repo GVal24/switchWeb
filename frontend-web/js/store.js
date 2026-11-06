@@ -70,6 +70,11 @@ export const Store = {
       suspensionVigente: !!datos.suspensionVigente,
       suspendidoHasta: datos.suspendidoHasta || null,
       avisoSuspension: datos.avisoSuspension || null,
+      // Si es false, la cuenta puede mirar el catálogo pero todavía no
+      // publicar, proponer trueques ni escribir por chat. null = todavía no
+      // lo consultamos (sesiones viejas); no se muestra el aviso.
+      nexoActivo:
+        typeof datos.nexoActivo === 'boolean' ? datos.nexoActivo : null,
     };
     if (datos.token) {
       this.token = datos.token;
