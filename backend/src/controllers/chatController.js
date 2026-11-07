@@ -3,6 +3,38 @@ const { ValidationError, ForbiddenError, NotFoundError } = require('../utils/cus
 const ChatModel = require('../models/chatModel');
 const UsuarioModel = require('../models/usuarioModel');
 const VoluntariadoModel = require('../models/voluntariadoModel');
+const InstitucionModel = require('../models/institucionModel');
+
+/**
+ * Devuelve el ID numérico de una institución a partir del canal "inst_<id>".
+ * Si el canal no es institucional, devuelve null.
+ */
+function idInstitucionDeCanal(canal) {
+  const coincidencia = /^inst_(\d+)$/.exec(String(canal || ''));
+  if (!coincidencia) return null;
+  const id = Number(coincidencia[1]);
+  return Number.isInteger(id) && id > 0 ? id : null;
+}
+
+/**
+ * Autoriza el acceso a una bandeja:
+ * - cada persona sólo puede ver la suya (receptorId = su propio ID);
+ * - los canales "inst_<id>" sólo se abren con una membresía activa.
+ */
+async function exigirAccesoABandeja(usuarioId, receptorId) {
+  const institucionId = idInstitucionDeCanal(receptorId);
+  if (institucionId) {
+    const membresia = await InstitucionModel.obtenerMembresiaActiva(institucionId, usuarioId);
+    if (!membresia) {
+      throw new ForbiddenError('No tenés acceso a los mensajes de esta institución.');
+    }
+    return;
+  }
+
+  if (!/^\d+$/.test(String(receptorId)) || String(receptorId) !== String(usuarioId)) {
+    throw new ForbiddenError('Sólo podés consultar tus propios mensajes.');
+  }
+}
 
 /**
  * GET /api/mensajes?emisorId=..&receptorId=..
@@ -98,8 +130,9 @@ const enviarMensaje = asyncWrapper(async (req, res) => {
 
 /**
  * PUT /api/mensajes/:id/leido
- * Marca un mensaje de la conversación como leído.
- * El emisor o el receptor de la conversación pueden marcarlo como leído.
+ * Marca un mensaje como leído. Sólo puede hacerlo quien lo recibió:
+ * el emisor no puede ocultarle una notificación a la otra persona.
+ * En canales institucionales hace falta una membresía activa.
  */
 const marcarMensajeLeido = asyncWrapper(async (req, res) => {
   const { id } = req.params;
@@ -113,9 +146,17 @@ const marcarMensajeLeido = asyncWrapper(async (req, res) => {
     throw new NotFoundError('El mensaje no existe.');
   }
 
-  const esEmisor = String(mensaje.emisor_id) === String(req.usuario.id);
-  const esReceptor = String(mensaje.receptor_id) === String(req.usuario.id);
-  if (!esEmisor && !esReceptor) {
+  const receptorId = String(mensaje.receptor_id || '');
+  const institucionId = idInstitucionDeCanal(receptorId);
+  if (institucionId) {
+    const membresia = await InstitucionModel.obtenerMembresiaActiva(
+      institucionId,
+      req.usuario.id
+    );
+    if (!membresia) {
+      throw new ForbiddenError('No podés marcar como leído este mensaje.');
+    }
+  } else if (receptorId !== String(req.usuario.id)) {
     throw new ForbiddenError('No podés marcar como leído este mensaje.');
   }
 
@@ -136,6 +177,8 @@ const obtenerNoLeidos = asyncWrapper(async (req, res) => {
   if (!receptorId) {
     throw new ValidationError("Se requiere el parámetro 'receptorId'.");
   }
+
+  await exigirAccesoABandeja(req.usuario.id, receptorId);
 
   const noLeidos = await ChatModel.listarNoLeidos(receptorId);
   res.status(200).json({

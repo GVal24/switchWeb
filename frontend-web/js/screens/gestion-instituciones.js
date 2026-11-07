@@ -46,24 +46,18 @@ export async function render(contenedor, ctx) {
   lista.addEventListener('click', procesarAccion);
   contenedor.querySelector('[data-refrescar]').addEventListener('click', () => render(contenedor, ctx));
 
-  // Badges de mensajes no leidos por institución (delegados) y lista de
-  // conversaciones recientes para responder de forma personalizada.
+  // Bandeja de mensajes no leídos de cada institución que administrás.
   await Promise.all(
     instituciones.map(async (inst) => {
       const receptorId = `inst_${inst.id}`;
       try {
         const noLeidos = await API.noLeidos(receptorId);
-        const el = lista.querySelector(`[data-no-leidos="${CSS.escape(String(inst.id))}"]`);
-        if (el) {
-          el.textContent = String(noLeidos.length);
-          el.hidden = noLeidos.length === 0;
-        }
         const contenedorConv = lista.querySelector(`[data-conversaciones="${CSS.escape(String(inst.id))}"]`);
         if (contenedorConv) {
           contenedorConv.innerHTML = conversaciones(inst, noLeidos);
         }
       } catch (error) {
-        /* Sin conexión: el badge queda en 0. */
+        /* Sin conexión o sin permiso: la bandeja queda vacía. */
       }
     })
   );
@@ -85,10 +79,6 @@ export async function render(contenedor, ctx) {
         </div>
         ${graficoActividad(inst)}
         <button type="button" class="btn btn-fantasma btn-sm" data-perfil="${esc(String(inst.id))}">${icon('eye')} Ver perfil público</button>
-        <button type="button" class="btn btn-secundario btn-sm" data-chat="${esc(String(inst.id))}">
-          ${icon('message')} Coordinar por chat
-          <span class="badge-num" data-no-leidos="${esc(String(inst.id))}" style="position:static;margin-left:0.25rem" hidden>0</span>
-        </button>
         <div data-conversaciones="${esc(String(inst.id))}"></div>
         <div class="seccion-cabecera mt-1"><h3>Necesidades</h3></div>
         ${inst.necesidades.length ? inst.necesidades.map((n) => formularioNecesidad(inst.id, n)).join('') : '<p class="campo-ayuda">Todavía no cargaste pedidos.</p>'}
@@ -182,6 +172,12 @@ export async function render(contenedor, ctx) {
       const etiqueta = nombre || 'Vecino/a de Switch';
       const esPersona = /^\d+$/.test(String(m.emisor_id || ''));
       const texto = String(m.texto || '').trim();
+      // Al responder se marcan como leídos todos los mensajes de esa persona,
+      // no sólo el que se está mirando.
+      const idsDelEmisor = mensajes
+        .filter((item) => String(item.emisor_id) === String(m.emisor_id))
+        .map((item) => item.id)
+        .join(',');
       return `
         <div class="fila" style="align-items:flex-start">
           <div class="crece">
@@ -190,18 +186,20 @@ export async function render(contenedor, ctx) {
           </div>
           ${
             esPersona
-              ? `<button type="button" class="btn btn-secundario btn-sm" data-chat-voluntario="${esc(String(m.emisor_id))}" data-nombre="${esc(etiqueta)}">${icon('message')} Responder</button>`
+              ? `<button type="button" class="btn btn-secundario btn-sm" data-chat-voluntario="${esc(String(m.emisor_id))}" data-nombre="${esc(etiqueta)}" data-mensajes="${esc(idsDelEmisor)}">${icon('message')} Responder</button>`
               : ''
           }
         </div>
       `;
     }).join('');
     return `
-      <div class="seccion-cabecera mt-1"><h3>Mensajes recientes</h3></div>
+      <div class="seccion-cabecera mt-1">
+        <h3>Mensajes recientes ${mensajes.length ? `<span class="badge-num" style="position:static;margin-left:0.3rem">${mensajes.length}</span>` : ''}</h3>
+      </div>
       ${
         mensajes.length
           ? bloques
-          : '<p class="campo-ayuda">Cuando un voluntario te escriba por chat, la conversación va a aparecer acá para que podés responder de forma personalizada.</p>'
+          : '<p class="campo-ayuda">Cuando un voluntario te escriba por chat, la conversación va a aparecer acá para que puedas responderle.</p>'
       }
     `;
   }
@@ -255,17 +253,16 @@ export async function render(contenedor, ctx) {
       navegar(`/instituciones/${encodeURIComponent(botonPerfil.dataset.perfil)}`);
       return;
     }
-    const botonChat = event.target.closest('[data-chat]');
-    if (botonChat) {
-      const instId = String(botonChat.dataset.chat);
-      const inst = instituciones.find((item) => String(item.id) === instId);
-      navegar(`/chat/inst_${encodeURIComponent(instId)}?nombre=${encodeURIComponent(inst?.nombre || 'Institución')}`);
-      return;
-    }
     const botonResponder = event.target.closest('[data-chat-voluntario]');
     if (botonResponder) {
       const voluntarioId = String(botonResponder.dataset.chatVoluntario);
       const voluntarioNombre = botonResponder.dataset.nombre || 'Vecino de Switch';
+      const ids = String(botonResponder.dataset.mensajes || '')
+        .split(',')
+        .map((id) => id.trim())
+        .filter(Boolean);
+      // Al abrir la respuesta, los mensajes de esa persona quedan leídos.
+      await Promise.all(ids.map((id) => API.marcarLeido(id).catch(() => null)));
       navegar(`/chat/${encodeURIComponent(voluntarioId)}?nombre=${encodeURIComponent(voluntarioNombre)}`);
       return;
     }

@@ -154,7 +154,9 @@ export async function render(contenedor, ctx) {
         return (esParaMi || esParaInst) && m.leido !== true;
       });
       if (sinLeer.length) {
-        await Promise.allSettled(sinLeer.map((m) => API.marcarLeido(m.id).catch(() => {})));
+        // Promise.all con catch por mensaje: funciona también en navegadores
+        // anteriores a Promise.allSettled.
+        await Promise.all(sinLeer.map((m) => API.marcarLeido(m.id).catch(() => null)));
       }
       pintar(antes || lista.length > previaCantidad);
     } catch (e) {

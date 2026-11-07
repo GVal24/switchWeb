@@ -13,8 +13,8 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/favicon.png" sizes="64x64" type="image/png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-  <link rel="stylesheet" href="css/tema.css?v=3b13123">
-  <link rel="stylesheet" href="css/componentes.css?v=3b13123">
+  <link rel="stylesheet" href="css/tema.css?v=20261106b">
+  <link rel="stylesheet" href="css/componentes.css?v=20261106b">
   <link rel="stylesheet" href="css/pantallas.css">
 </head>
 <body>
@@ -46,5 +46,15 @@
   <!-- <script>window.SWITCH_API_URL = 'https://TU-BACKEND.onrender.com/api';</script> -->
   <script src="js/config.js"></script>
   <script type="module" src="js/app.js"></script>
+  <script nomodule>
+    document.addEventListener('DOMContentLoaded', function () {
+      var aviso = document.createElement('div');
+      aviso.className = 'noscript';
+      aviso.innerHTML =
+        '<div><h1>Actualizá tu navegador</h1>' +
+        '<p>Switch usa funciones modernas de la web. Probá con Chrome, Edge, Firefox o Safari actualizados, o con otro dispositivo.</p></div>';
+      document.body.appendChild(aviso);
+    });
+  </script>
 </body>
 </html>

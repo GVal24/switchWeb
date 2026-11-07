@@ -153,6 +153,14 @@
   padding: 0;
   cursor: pointer;
   text-align: left;
+  /* Permite que el texto se recorte en pantallas angostas en vez de
+     empujar los botones de acción fuera de la pantalla. */
+  min-width: 0;
+}
+
+.appbar-marca > span {
+  min-width: 0;
+  overflow: hidden;
 }
 
 .isotipo {
@@ -176,6 +184,9 @@
   font-weight: 600;
   color: var(--texto-suave);
   letter-spacing: 0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .appbar-acciones {
@@ -183,6 +194,28 @@
   display: flex;
   align-items: center;
   gap: 0.15rem;
+  flex: 0 0 auto;
+}
+
+.appbar-acciones .icon-btn,
+.appbar > .icon-btn {
+  /* Sin esto, en 320 px los botones se aplastan y la barra desborda. */
+  flex: 0 0 auto;
+}
+
+@media (max-width: 360px) {
+  .appbar {
+    gap: 0.4rem;
+    padding-inline: 0.65rem;
+  }
+
+  .appbar-marca {
+    gap: 0.4rem;
+  }
+
+  .appbar-acciones {
+    gap: 0;
+  }
 }
 
 .appbar-acciones .icon-btn {
