@@ -51,7 +51,7 @@ Este repositorio contiene la **versión web progresiva (PWA)** de Switch, que se
 - **Vigencia inteligente del Nexo Social**: los días de validez se calculan según la urgencia de la necesidad, el esfuerzo estimado de la tarea y el nivel comunitario del voluntario.
 - **Catálogo P2P**: publicación de objetos y servicios con **clasificación automática de esfuerzo**, búsqueda, filtros y propuestas de trueque multi-ítem.
 - **Gamificación**: niveles de comunidad — *Semilla del Barrio → Brote Activo → Vecino Confiable → Motor Solidario → Pilar de la Comunidad* — con puntos e insignias, incluidas **insignias secretas**.
-- **Chat integrado** entre vecinos y con instituciones, sistema de reportes y reseñas.
+- **Chat integrado** entre vecinos y con instituciones, sistema de reportes y reseñas. Los voluntarios coordinan entregas por trueque; al escribir a una institución (`inst_X`) se guarda el mensaje y se activa la respuesta de coordinación. El panel institucional muestra el **badge de mensajes no leídos** por institución y lista las conversaciones recientes para **responder de forma personalizada** a cada voluntario desde el panel de delegados. Los endpoints de la API son `GET /api/mensajes`, `POST /api/mensajes/enviar`, `GET /api/mensajes/no-leidos?receptorId=...` y `PUT /api/mensajes/:id/leido`.
 - **Panel de administración**: métricas de la red, moderación de publicaciones e imágenes, reportes (desestimar, suspender, dar de baja), buzón de contacto y sugerencias de esfuerzo.
 
 ---
