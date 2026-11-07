@@ -5,9 +5,6 @@
  * usuaria los lea ANTES de registrarse, y la aceptación queda registrada con
  * versión, fecha e IP en la tabla aceptaciones_legales.
  *
- * IMPORTANTE: los textos se redactaron contrastados contra lo que el sistema
- * hace hoy. Donde la funcionalidad no existe, el texto lo dice. No se afirma
- * ninguna protección que el código no aplique.
  */
 
 const VERSION = '1.0.0';

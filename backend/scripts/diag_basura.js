@@ -44,7 +44,7 @@ const almacen = require('../src/services/almacenImagenes');
   console.log(`\nResumen: ${archivos.length} archivos, ${referenciados.size} referenciados, ${huerfanos.length} huérfanos.`);
 
   // Sólo borra archivos que ninguna publicación referencia. Las fotos que sí
-  // están en uso no se tocan nunca, así que esto es seguro de repetir.
+  // están en uso no se tocan nunca.
   if (process.argv[2] === 'limpiar' && huerfanos.length) {
     let borrados = 0;
     for (const f of huerfanos) {
