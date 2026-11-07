@@ -144,6 +144,18 @@ export async function render(contenedor, ctx) {
       if (nuevaFirma === firma && silencioso) return;
       firma = nuevaFirma;
       mensajes = lista;
+      // Marcar como leídos los mensajes dirigidos a la sesión actual
+      const miId = String(Store.usuario?.id ?? '');
+      const esInstThread = String(receptorId || '').startsWith('inst_');
+      const sinLeer = lista.filter((m) => {
+        const esParaMi = String(m.receptor_id) === miId;
+        const esParaInst =
+          esInstThread && String(m.receptor_id) === String(receptorId) && String(m.emisor_id) !== miId;
+        return (esParaMi || esParaInst) && m.leido !== true;
+      });
+      if (sinLeer.length) {
+        await Promise.allSettled(sinLeer.map((m) => API.marcarLeido(m.id).catch(() => {})));
+      }
       pintar(antes || lista.length > previaCantidad);
     } catch (e) {
       if (miCarga !== carga) return;

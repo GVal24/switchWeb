@@ -249,6 +249,11 @@
   border: 1px solid rgba(0, 0, 0, 0.12);
 }
 
+/* El badge inline (p. ej. en botones) respeta el atributo hidden. */
+.badge-num[hidden] {
+  display: none;
+}
+
 /* ---------- Botones ---------- */
 .btn {
   display: inline-flex;

@@ -1,5 +1,5 @@
 const asyncWrapper = require('../middlewares/asyncWrapper');
-const { ValidationError, ForbiddenError } = require('../utils/customErrors');
+const { ValidationError, ForbiddenError, NotFoundError } = require('../utils/customErrors');
 const ChatModel = require('../models/chatModel');
 const UsuarioModel = require('../models/usuarioModel');
 const VoluntariadoModel = require('../models/voluntariadoModel');
@@ -96,7 +96,59 @@ const enviarMensaje = asyncWrapper(async (req, res) => {
   });
 });
 
+/**
+ * PUT /api/mensajes/:id/leido
+ * Marca un mensaje de la conversación como leído.
+ * El emisor o el receptor de la conversación pueden marcarlo como leído.
+ */
+const marcarMensajeLeido = asyncWrapper(async (req, res) => {
+  const { id } = req.params;
+  const mensajeId = Number(id);
+  if (!Number.isInteger(mensajeId) || mensajeId < 1) {
+    throw new ValidationError('El ID del mensaje no es válido.');
+  }
+
+  const mensaje = await ChatModel.obtenerPorId(mensajeId);
+  if (!mensaje) {
+    throw new NotFoundError('El mensaje no existe.');
+  }
+
+  const esEmisor = String(mensaje.emisor_id) === String(req.usuario.id);
+  const esReceptor = String(mensaje.receptor_id) === String(req.usuario.id);
+  if (!esEmisor && !esReceptor) {
+    throw new ForbiddenError('No podés marcar como leído este mensaje.');
+  }
+
+  const actualizado = await ChatModel.marcarLeido(mensajeId);
+  res.status(200).json({
+    exito: true,
+    datos: actualizado
+  });
+});
+
+/**
+ * GET /api/mensajes/no-leidos?receptorId=..
+ * Devuelve los mensajes no leídos dirigidos a un receptor
+ * (usuario "123" o institución "inst_1").
+ */
+const obtenerNoLeidos = asyncWrapper(async (req, res) => {
+  const receptorId = req.query.receptorId || req.query.receptor_id;
+  if (!receptorId) {
+    throw new ValidationError("Se requiere el parámetro 'receptorId'.");
+  }
+
+  const noLeidos = await ChatModel.listarNoLeidos(receptorId);
+  res.status(200).json({
+    exito: true,
+    datos: noLeidos,
+    mensajes: noLeidos,
+    receptorId
+  });
+});
+
 module.exports = {
   obtenerMensajes,
-  enviarMensaje
+  enviarMensaje,
+  marcarMensajeLeido,
+  obtenerNoLeidos
 };

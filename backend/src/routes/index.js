@@ -69,6 +69,8 @@ router.post('/catalogo/:publicacionId/sugerir-esfuerzo', requerirSesion, requier
 // la conversación pero no escribir; con el Nexo vencido, tampoco enviar.
 router.get('/mensajes', requerirSesion, chatController.obtenerMensajes);
 router.post('/mensajes/enviar', requerirSesion, requiereCuentaHabilitada, chatController.enviarMensaje);
+router.get('/mensajes/no-leidos', requerirSesion, chatController.obtenerNoLeidos);
+router.put('/mensajes/:id/leido', requerirSesion, chatController.marcarMensajeLeido);
 
 // Rutas de Intercambios / Trueques
 router.post('/intercambios/proponer', requerirSesion, requiereCuentaHabilitada, intercambioController.proponerIntercambio);

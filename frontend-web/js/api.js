@@ -359,6 +359,18 @@ export const API = {
     });
   },
 
+  async marcarLeido(id) {
+    const res = await pedir(`/mensajes/${encodeURIComponent(id)}/leido`, { metodo: 'PUT' });
+    return datos(res);
+  },
+
+  async noLeidos(receptorId) {
+    const res = await pedir('/mensajes/no-leidos?receptorId=' + encodeURIComponent(receptorId));
+    const data = datos(res);
+    const lista = Array.isArray(data) ? data : data?.mensajes || data?.noLeidos || data?.datos || [];
+    return lista;
+  },
+
   /* ---------- reportes y contacto ---------- */
   async reportar(reportadoId, reportadoNombre, motivo) {
     return pedir('/reportes', {

@@ -46,6 +46,28 @@ export async function render(contenedor, ctx) {
   lista.addEventListener('click', procesarAccion);
   contenedor.querySelector('[data-refrescar]').addEventListener('click', () => render(contenedor, ctx));
 
+  // Badges de mensajes no leidos por institución (delegados) y lista de
+  // conversaciones recientes para responder de forma personalizada.
+  await Promise.all(
+    instituciones.map(async (inst) => {
+      const receptorId = `inst_${inst.id}`;
+      try {
+        const noLeidos = await API.noLeidos(receptorId);
+        const el = lista.querySelector(`[data-no-leidos="${CSS.escape(String(inst.id))}"]`);
+        if (el) {
+          el.textContent = String(noLeidos.length);
+          el.hidden = noLeidos.length === 0;
+        }
+        const contenedorConv = lista.querySelector(`[data-conversaciones="${CSS.escape(String(inst.id))}"]`);
+        if (contenedorConv) {
+          contenedorConv.innerHTML = conversaciones(inst, noLeidos);
+        }
+      } catch (error) {
+        /* Sin conexión: el badge queda en 0. */
+      }
+    })
+  );
+
   function tarjeta(inst) {
     const esResponsable = inst.rol_membresia === 'RESPONSABLE';
     const cuposTotal = Number(inst.cupos_totales) || 0;
@@ -63,6 +85,11 @@ export async function render(contenedor, ctx) {
         </div>
         ${graficoActividad(inst)}
         <button type="button" class="btn btn-fantasma btn-sm" data-perfil="${esc(String(inst.id))}">${icon('eye')} Ver perfil público</button>
+        <button type="button" class="btn btn-secundario btn-sm" data-chat="${esc(String(inst.id))}">
+          ${icon('message')} Coordinar por chat
+          <span class="badge-num" data-no-leidos="${esc(String(inst.id))}" style="position:static;margin-left:0.25rem" hidden>0</span>
+        </button>
+        <div data-conversaciones="${esc(String(inst.id))}"></div>
         <div class="seccion-cabecera mt-1"><h3>Necesidades</h3></div>
         ${inst.necesidades.length ? inst.necesidades.map((n) => formularioNecesidad(inst.id, n)).join('') : '<p class="campo-ayuda">Todavía no cargaste pedidos.</p>'}
         <form class="panel" data-crear-necesidad="${esc(String(inst.id))}">
@@ -148,6 +175,37 @@ export async function render(contenedor, ctx) {
     `;
   }
 
+  function conversaciones(inst, noLeidos) {
+    const mensajes = Array.isArray(noLeidos) ? noLeidos : [];
+    const bloques = mensajes.map((m) => {
+      const nombre = [m.emisor_nombre, m.emisor_apellido].filter(Boolean).join(' ').trim();
+      const etiqueta = nombre || 'Vecino/a de Switch';
+      const esPersona = /^\d+$/.test(String(m.emisor_id || ''));
+      const texto = String(m.texto || '').trim();
+      return `
+        <div class="fila" style="align-items:flex-start">
+          <div class="crece">
+            <strong>${esc(etiqueta)}</strong>
+            <p class="campo-ayuda" style="margin-bottom:0">${esc(texto)}</p>
+          </div>
+          ${
+            esPersona
+              ? `<button type="button" class="btn btn-secundario btn-sm" data-chat-voluntario="${esc(String(m.emisor_id))}" data-nombre="${esc(etiqueta)}">${icon('message')} Responder</button>`
+              : ''
+          }
+        </div>
+      `;
+    }).join('');
+    return `
+      <div class="seccion-cabecera mt-1"><h3>Mensajes recientes</h3></div>
+      ${
+        mensajes.length
+          ? bloques
+          : '<p class="campo-ayuda">Cuando un voluntario te escriba por chat, la conversación va a aparecer acá para que podés responder de forma personalizada.</p>'
+      }
+    `;
+  }
+
   async function procesarFormulario(event) {
     const form = event.target;
     if (!form.matches('[data-crear-necesidad], [data-editar-necesidad], [data-agregar-delegado]')) return;
@@ -195,6 +253,20 @@ export async function render(contenedor, ctx) {
     const botonPerfil = event.target.closest('[data-perfil]');
     if (botonPerfil) {
       navegar(`/instituciones/${encodeURIComponent(botonPerfil.dataset.perfil)}`);
+      return;
+    }
+    const botonChat = event.target.closest('[data-chat]');
+    if (botonChat) {
+      const instId = String(botonChat.dataset.chat);
+      const inst = instituciones.find((item) => String(item.id) === instId);
+      navegar(`/chat/inst_${encodeURIComponent(instId)}?nombre=${encodeURIComponent(inst?.nombre || 'Institución')}`);
+      return;
+    }
+    const botonResponder = event.target.closest('[data-chat-voluntario]');
+    if (botonResponder) {
+      const voluntarioId = String(botonResponder.dataset.chatVoluntario);
+      const voluntarioNombre = botonResponder.dataset.nombre || 'Vecino de Switch';
+      navegar(`/chat/${encodeURIComponent(voluntarioId)}?nombre=${encodeURIComponent(voluntarioNombre)}`);
       return;
     }
     const botonPausa = event.target.closest('[data-pausar]');
