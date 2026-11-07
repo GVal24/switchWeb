@@ -36,6 +36,8 @@
   overscroll-behavior-y: contain;
   scrollbar-width: thin;
   scrollbar-color: var(--borde-fuerte) transparent;
+  display: flex;
+  flex-direction: column;
 }
 
 @media (min-width: 960px) {
@@ -60,13 +62,18 @@
 .pantalla {
   padding: 0.9rem 1rem 1.6rem;
   animation: aparecer 0.28s ease both;
+  flex: 1 0 auto;
 }
 
 @media (min-width: 960px) {
+  .app-main {
+    display: block;
+  }
   .pantalla {
     max-width: 60rem;
     margin: 0 auto;
     padding: 1.4rem 1.8rem 2.4rem;
+    flex: 0 0 auto;
   }
 }
 

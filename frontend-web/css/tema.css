@@ -94,6 +94,15 @@ html {
   text-size-adjust: 100%;
 }
 
+/* En teléfonos subimos apenas la escala base para que los textos no
+   queden demasiado chicos. Las paletas accesibles ya tienen su propio
+   tamaño mayor y conservan su regla. */
+@media (max-width: 480px) {
+  html {
+    font-size: calc(112% * var(--escala));
+  }
+}
+
 /* ---------- Paleta 2: Vista accesible (baja visión, letra grande) ---------- */
 html[data-paleta="accesible"] {
   font-size: calc(112.5% * var(--escala));

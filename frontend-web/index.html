@@ -13,9 +13,9 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/favicon.png" sizes="64x64" type="image/png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-  <link rel="stylesheet" href="css/tema.css?v=20261106b">
-  <link rel="stylesheet" href="css/componentes.css?v=20261106b">
-  <link rel="stylesheet" href="css/pantallas.css">
+  <link rel="stylesheet" href="css/tema.css?v=20261107a">
+  <link rel="stylesheet" href="css/componentes.css?v=20261107a">
+  <link rel="stylesheet" href="css/pantallas.css?v=20261107a">
 </head>
 <body>
   <a class="skip-link" href="#contenido">Saltar al contenido principal</a>
@@ -55,6 +55,47 @@
         '<p>Switch usa funciones modernas de la web. Probá con Chrome, Edge, Firefox o Safari actualizados, o con otro dispositivo.</p></div>';
       document.body.appendChild(aviso);
     });
+  </script>
+  <script>
+    /* Si un teléfono abre la app con "Sitio para computadora" activado,
+       Chrome usa un lienzo de ~980 px y achica todo. Detectamos ese caso
+       para avisar cómo volver a la versión móvil, que se ve mucho más grande. */
+    (function () {
+      function mostrarAvisoEscritorio() {
+        var pantallaAngosta = window.screen && window.screen.width > 0 && window.screen.width <= 600;
+        var lienzoAncho = window.innerWidth >= 960;
+        var zoomChico = Boolean(window.visualViewport) && window.visualViewport.scale < 0.75;
+        if (!lienzoAncho || !(pantallaAngosta || zoomChico)) return;
+        if (document.getElementById('aviso-escritorio')) return;
+
+        var aviso = document.createElement('div');
+        aviso.id = 'aviso-escritorio';
+        aviso.setAttribute('role', 'alert');
+        aviso.style.cssText =
+          'position:fixed;top:0;left:0;right:0;z-index:99999;background:#0f172a;color:#fff;' +
+          'padding:20px 22px;box-shadow:0 8px 28px rgba(0,0,0,.4);cursor:pointer;' +
+          'font:600 34px/1.35 "Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif;';
+        aviso.innerHTML =
+          '<div style="max-width:980px;margin:0 auto;display:flex;gap:18px;align-items:flex-start">' +
+          '<div style="flex:1">Estás viendo Switch en <strong>modo escritorio</strong> y por eso se ve chico. ' +
+          'Abrí el menú <strong>⋮</strong> de Chrome, desactivá <strong>“Sitio para computadora”</strong> y recargá. ' +
+          '<span style="opacity:.75">Tocá este aviso para cerrarlo.</span></div>' +
+          '<button type="button" aria-label="Cerrar aviso" style="flex:0 0 auto;background:transparent;' +
+          'border:1px solid rgba(255,255,255,.6);color:#fff;border-radius:14px;font-size:40px;line-height:1;' +
+          'min-width:64px;min-height:60px;padding:6px 14px;cursor:pointer">×</button></div>';
+        function cerrar() {
+          if (aviso.parentNode) aviso.parentNode.removeChild(aviso);
+        }
+        aviso.addEventListener('click', cerrar);
+        document.body.appendChild(aviso);
+      }
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', mostrarAvisoEscritorio);
+      } else {
+        mostrarAvisoEscritorio();
+      }
+    })();
   </script>
 </body>
 </html>
