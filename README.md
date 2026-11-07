@@ -16,11 +16,11 @@ Este repositorio contiene la **versión web progresiva (PWA)** de Switch, que se
 
 | Voluntariado | Catálogo P2P | Perfil e insignias |
 |:---:|:---:|:---:|
-| ![Voluntariado](docs/screenshots/voluntariado.jpg) | ![Catálogo](docs/screenshots/catalogo.png) | ![Perfil](docs/screenshots/perfil.png) |
+| ![Voluntariado](docs/screenshots/voluntariado.png) | ![Catálogo](docs/screenshots/catalogo.png) | ![Perfil](docs/screenshots/perfil.png) |
 
 | Accesibilidad | Panel admin | Chat |
 |:---:|:---:|:---:|
-| ![Accesibilidad](docs/screenshots/accesibilidad.png) | ![Admin](docs/screenshots/admin.jpg) | ![Chat](docs/screenshots/chat.jpg) |
+| ![Accesibilidad](docs/screenshots/accesibilidad.png) | ![Admin](docs/screenshots/admin.jpg) |
 
 ---
 
